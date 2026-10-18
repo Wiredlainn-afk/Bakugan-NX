@@ -7,6 +7,8 @@
 
 A native Nintendo Switch port of the Xbox 360 version of **Bakugan: Battle Brawlers** (2009).
 
+Who asked for it? Don't ask me lol.
+
 It's not an emulator. The PowerPC code of the game's `default.xex` is statically recompiled to C++ with
 [ReXGlue](https://github.com/rexglue/rexglue-sdk) and compiled for the Switch, and the game is drawn by a native
 Vulkan renderer running on NVK (Mesa). It targets **30 FPS at the console's stock clocks**, at 720p in handheld mode and
