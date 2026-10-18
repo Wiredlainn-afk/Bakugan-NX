@@ -22,18 +22,17 @@ up to 1080p docked, with a dynamic render scale that gives up resolution only wh
 
 ## Status
 
-Boots and plays on a Switch in handheld mode and docked, with sound, controllers, saves, the intro movies and the
-cutscenes. Measured on the console at the stock clocks:
+Boots and plays on a Switch in handheld mode and docked. Measured on the console at the stock clocks:
 
 - menus, cutscenes, the story and light battles: 720p, a steady 30 fps;
-- heavy battle arenas (water, fire, haos, 2x2): the render height steps down to 540-630p to keep 30 fps (95 % or more
+- heavy battle arenas (Aquos, Fire, Haos, 2x2, Battle Royale): the render height steps down to 540-630p to keep 30 fps (95 % or more
   of the time at 28 fps or higher); sharpened with CAS when below native;
 - the limit there is the GPU (EDRAM emulation, about 22 ms per frame at 540p), not the CPU. See
   [docs/performance-history.md](docs/performance-history.md).
 
 ## How to install
 
-1. Open the installer page: **https://wiredlainn-afk.github.io/Bakugan-NX/** (it works once a release is published).
+1. Open the installer page: **https://wiredlainn-afk.github.io/Bakugan-NX/**.
 2. Choose your game (the disc image `.iso`, or the extracted disc folder with `default.xex`) and press
    **Create bakugan-nx.zip**. Everything runs in your browser and the game files never leave your computer: the page
    checks your edition, downloads the build and makes the shaders from your disc.
@@ -47,12 +46,12 @@ Your `bakugan-nx` folder should look like this:
   bakugan.toml               (settings, written at the first start)
   bakugan_shaders.mesp       (the game's shaders, made from your disc)
   bakugan_shaders.mesp.idx
-  cache/bakugan_native_pipelines.bin   (optional, pipeline cache)
+  cache/bakugan_native_pipelines.bin   (pipeline cache)
   game_root/                 (default.xex and media/ of your disc)
 ```
 
 Launch it with a game override (hold **R** while starting an installed title) or a forwarder, with a **39-bit address
-space**. Album applet mode does not provide enough memory.
+space**.
 
 To build everything yourself instead, see [docs/building.md](docs/building.md); the page is described in
 [installer/README.md](installer/README.md).
@@ -77,6 +76,11 @@ sharpening are documented in the comments of that file and in [docs/performance-
 | `mesa/` | How to get the NVK driver the NRO links |
 | `installer/` | The browser installer page (shaders are made from the player's disc) |
 | `docs/` | Build instructions, notes from the first stages and the performance history |
+
+##  AI slop notice
+
+Did AI help me save countless hours of optimization and trial and error? Yes, can't hide it.
+Is the game itself slop? Also yes, let's be real, the franchise sucks and has been sucking since 2014 or something lol. This game though? It's pretty peak.
 
 ## Credits
 
