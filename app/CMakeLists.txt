@@ -194,7 +194,7 @@ if(REXGLUE_PLATFORM_SWITCH)
     # The homebrew menu's entry: name, author, version and icon (app/icon.jpg, 256x256 JPEG).
     rexglue_switch_add_nro(bakugan
         NAME "Bakugan Battle Brawlers"
-        AUTHOR "bakugan-nx"
+        AUTHOR "Wiredlainn"
         VERSION "0.1.0"
         ICON "${CMAKE_CURRENT_SOURCE_DIR}/icon.jpg")
 endif()

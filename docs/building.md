@@ -30,9 +30,13 @@ packages) and the problems found.
    `tools/wrap_discovered.py`) and packed with `tools/win/build_shader_library.ps1 <folders>` into
    `out/shaderlib/bakugan_shaders.mesp` and `.idx`. See [../shaders/README.md](../shaders/README.md).
 6. **Switch build.** `tools/win/build_switch.ps1 -Jobs 8` makes `out/nx/bakugan.nro`.
-7. **SD card folder.** `tools/win/package_release.ps1` makes `out/nx/sdcard_release/switch/bakugan-nx/` (NRO, shaders
-   and, when `release/cache/bakugan_native_pipelines.bin` exists, a warmed pipeline cache). Copy your `game_root` into
-   it. `tools/win/package_switch.ps1` and `tools/win/stage_toml.ps1` make test folders with a chosen settings file.
+7. **Release files.** `tools/win/package_release.ps1` makes `out/nx/release_assets/`: `bakugan.nro`, the optional
+   `bakugan_native_pipelines.bin` (the warmed pipeline cache, taken from `release/cache/`) and `SHA256SUMS.txt`. These are
+   the two files to attach to the GitHub release (tag `v0.1.0`); the installer page ([../installer/README.md](../installer/README.md))
+   downloads them and makes the shader package in the player's browser from their own disc, so the release does not
+   contain the game's shaders. `-Full` makes the old self-contained SD card folder instead (with the shaders); only use
+   it for your own installs. `tools/win/package_switch.ps1` and `tools/win/stage_toml.ps1` make test folders with a chosen
+   settings file.
 
 ## Test and release builds
 
@@ -40,10 +44,11 @@ Both are the same source and the same NRO. What differs is the settings file and
 
 | | Test build | Release build |
 |---|---|---|
-| Script | `tools/win/package_switch.ps1`, then `tools/win/stage_toml.ps1 <name>` | `tools/win/package_release.ps1` |
-| Folder | `out/nx/sdcard/switch/bakugan-nx` | `out/nx/sdcard_release/switch/bakugan-nx` |
+| Script | `tools/win/package_switch.ps1`, then `tools/win/stage_toml.ps1 <name>` | `tools/win/package_release.ps1` (release assets for the installer page) |
+| Folder | `out/nx/sdcard/switch/bakugan-nx` | `out/nx/release_assets` (`-Full`: `out/nx/sdcard_release/switch/bakugan-nx`) |
 | `bakugan.toml` | One of the files in [`app/tests`](../app/tests/README.md) (numbered logs, profile report, GPU categories, diagnostic frames) | None: the NRO writes the player's default one; everything else is compiled in (`app/bakugan_switch_defaults.toml`), logging replaced at every start |
 | Pipeline cache | Not copied (the console keeps growing its own while testing; `-WithCache` adds the packaged one) | Included when `release/cache/bakugan_native_pipelines.bin` exists |
+| Logs | Numbered (`bakugan_NNN.log`), one per start, with the profile report | One `logs/bakugan.log`, replaced at every start (`log_single_file = true`, `log_max_files = 1`), plus `logs/flight.txt` and `flight.prev.txt` |
 
 The standard comparison test is `app/tests/AK_profile_xfer.toml`; `Z_release_check.toml` checks that the empty file
 gives the release behaviour. The dynamic render scale, the late-frame rule and CAS are on by default in both.
