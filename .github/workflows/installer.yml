@@ -58,7 +58,7 @@ jobs:
       - name: Build
         run: |
           export XXHASH_DIR="$RUNNER_TEMP/xxHash" FMT_DIR="$RUNNER_TEMP/fmt/include"
-          OUT="$PWD/wasm-out" shaders/wasm/build_wasm_tools.sh hlsl pack
+          OUT="$PWD/wasm-out" bash shaders/wasm/build_wasm_tools.sh hlsl pack
           ls -l wasm-out
       - uses: actions/upload-artifact@v4
         with:
@@ -80,7 +80,7 @@ jobs:
           key: dxc-wasm-${{ inputs.rebuild_dxc || false }}-${{ env.DXC_COMMIT }}-${{ env.EMSDK_VERSION }}-${{ hashFiles('shaders/wasm/dxc_web.cpp', 'shaders/wasm/link_dxc_wasm.sh', 'installer/tools/fetch_dxc.sh') }}
       - name: Fetch and verify the reference DXC compiler
         if: inputs.rebuild_dxc != true && steps.cache.outputs.cache-hit != 'true'
-        run: installer/tools/fetch_dxc.sh dxc-out
+        run: bash installer/tools/fetch_dxc.sh dxc-out
       - uses: mymindstorm/setup-emsdk@v14
         if: inputs.rebuild_dxc == true && steps.cache.outputs.cache-hit != 'true'
         with:
@@ -156,12 +156,26 @@ jobs:
             tag=$(gh api "repos/$GITHUB_REPOSITORY/releases" --jq '[.[] | select(.draft == false)][0].tag_name // empty')
           fi
           test -n "$tag" || { echo '::error::Publish a release with bakugan.nro before deploying'; exit 1; }
-          gh release download "$tag" --pattern 'bakugan.nro' --pattern 'bakugan_native_pipelines.bin' --dir release-assets
+          gh release download "$tag" --pattern '*.nro' --pattern 'bakugan_native_pipelines.bin' --pattern '*.zip' --dir release-assets
+          # The release may carry the SD card zip instead of the loose files: take bakugan.nro and the cache from it.
+          python3 - <<'PY'
+          import glob, os, zipfile
+          d = 'release-assets'
+          for z in glob.glob(os.path.join(d, '*.zip')):
+              with zipfile.ZipFile(z) as zf:
+                  for name in zf.namelist():
+                      base = os.path.basename(name)
+                      if base in ('bakugan.nro', 'bakugan_native_pipelines.bin') and not os.path.exists(os.path.join(d, base)):
+                          with open(os.path.join(d, base), 'wb') as out:
+                              out.write(zf.read(name))
+                          print('took', base, 'from', os.path.basename(z))
+              os.remove(z)
+          PY
           echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
       - name: Verify DXC can compile a shader
         run: node installer/tools/wasm_smoke.mjs wasm-all
       - name: Stage a complete site
-        run: installer/tools/stage_site.sh _site --wasm wasm-all --releases release-assets --require-complete
+        run: bash installer/tools/stage_site.sh _site --wasm wasm-all --releases release-assets --require-complete
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
