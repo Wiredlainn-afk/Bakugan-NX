@@ -1,6 +1,6 @@
 <div align=center>
 
-<img src="app/icon.jpg" alt="Bakugan: Battle Brawlers" width="30%">
+<img src="extras/logo.webp" alt="Bakugan: Battle Brawlers" width="35%">
 
 </div>
 <h1 align=center>Bakugan: Battle Brawlers — Nintendo Switch port</h1>
@@ -19,6 +19,25 @@ up to 1080p docked, with a dynamic render scale that gives up resolution only wh
 > [!TIP]
 > **Installer page: https://wiredlainn-afk.github.io/Bakugan-NX/** — pick your disc, get the SD card package. Everything
 > runs in your browser. See [How to install](#how-to-install).
+
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="extras/screenshots/03-game-start-aquos.jpg" alt="Game start in the Aquos arena"></td>
+    <td><img src="extras/screenshots/05-aiming.jpg" alt="Aiming a Bakugan in the Haos arena"></td>
+  </tr>
+  <tr>
+    <td><img src="extras/screenshots/01-gate-card.jpg" alt="Gate Card cut-in"></td>
+    <td><img src="extras/screenshots/02-shun.jpg" alt="Shun"></td>
+  </tr>
+  <tr>
+    <td><img src="extras/screenshots/04-runo.jpg" alt="Runo"></td>
+    <td><img src="extras/screenshots/06-alice.jpg" alt="Alice"></td>
+  </tr>
+</table>
+
+<sub>Captured on the Switch in handheld mode.</sub>
 
 ## Status
 
