@@ -33,7 +33,7 @@ up to 1080p docked, with a dynamic render scale that gives up resolution only wh
   </tr>
   <tr>
     <td><img src="extras/screenshots/runo.jpg" alt="Runo"></td>
-    <td><img src="extras/screenshots/alice.jpg" alt="Alice"></td>
+    <td><img src="extras/screenshots/jenny.jpg" alt="Jenny"></td>
   </tr>
 </table>
 
