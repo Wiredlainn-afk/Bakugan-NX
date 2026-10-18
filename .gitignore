@@ -65,3 +65,9 @@ __pycache__/
 .vscode/
 .claude/
 .DS_Store
+
+# --- Installer: WebAssembly tools are built by the workflow (installer/tools/stage_site.sh); only the run-time list is tracked ---
+/installer/wasm/*
+!/installer/wasm/runtime_containers.json
+/installer/releases/
+/shaders/wasm/out/
