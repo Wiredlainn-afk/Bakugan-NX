@@ -24,16 +24,16 @@ up to 1080p docked, with a dynamic render scale that gives up resolution only wh
 
 <table>
   <tr>
-    <td><img src="extras/screenshots/03-game-start-aquos.jpg" alt="Game start in the Aquos arena"></td>
-    <td><img src="extras/screenshots/05-aiming.jpg" alt="Aiming a Bakugan in the Haos arena"></td>
+    <td><img src="extras/screenshots/aquos-game-start.jpg" alt="Game start in the Aquos arena"></td>
+    <td><img src="extras/screenshots/haos-aiming.jpg" alt="Aiming a Bakugan in the Haos arena"></td>
   </tr>
   <tr>
-    <td><img src="extras/screenshots/01-gate-card.jpg" alt="Gate Card cut-in"></td>
-    <td><img src="extras/screenshots/02-shun.jpg" alt="Shun"></td>
+    <td><img src="extras/screenshots/gate-card-cutin.jpg" alt="Gate Card cut-in"></td>
+    <td><img src="extras/screenshots/shun.jpg" alt="Shun"></td>
   </tr>
   <tr>
-    <td><img src="extras/screenshots/04-runo.jpg" alt="Runo"></td>
-    <td><img src="extras/screenshots/06-alice.jpg" alt="Alice"></td>
+    <td><img src="extras/screenshots/runo.jpg" alt="Runo"></td>
+    <td><img src="extras/screenshots/alice.jpg" alt="Alice"></td>
   </tr>
 </table>
 
