@@ -1,0 +1,2 @@
+# Release defaults check: no keys at all, everything comes from the NRO built-in defaults (logging on and replaced
+# every start, dynamic render scale, CAS 0.7 below native size, native renderer, input by letter).

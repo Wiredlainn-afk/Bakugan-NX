@@ -1,0 +1,49 @@
+# Bakugan: Battle Brawlers for the Switch: the fixed settings, compiled into the NRO (app/CMakeLists.txt,
+# src/bakugan_app.h BuiltInConfig) and applied before the SD card's bakugan.toml, which holds the player's options
+# (app/bakugan_switch.toml) and may still override any key here for testing. Logging is off by default.
+
+# Game and paths
+license_mask = 1
+bakugan_renderer_native = true
+bakugan_render_height_handheld = 720
+bakugan_render_height_docked = 1080
+bakugan_shader_misses = ""
+
+# Face buttons by letter, as in nfsmw-nx: each Switch button acts as the Xbox button with the same letter, so the
+# letter in the on-screen prompts is the button to press (A accepts, B goes back). User requirement, corrected
+# 2026-10-12 after the first hardware test: the earlier "by position" mapping made the prompts disagree with the
+# letters printed on the pad. (input_xbox_layout = true gives the by-position mapping again.)
+input_xbox_layout = false
+input_joycon_sideways = true
+
+# Logging stays on (info) so a problem can be investigated afterwards: one file, logs/bakugan.log, replaced at every
+# start (see log_single_file below).
+log_level = "info"
+log_to_file = true
+
+# EDRAM colour conversions as fragment passes (hardware test 2026-10-12: edram_alias 45 -> 25 ms per frame).
+bakugan_native_conversion_frag = true
+
+# Dynamic render scale is on by default (bakugan_render_dynamic): the render height steps down from 720p (handheld) /
+# 1080p (docked) while the GPU is the limit. Below the native size the image is sharpened with CAS (contrast adaptive
+# sharpening, only while the render scale is below native: SetPresentSharpenWanted); hardware test 2026-10-15: "perfect,
+# barely noticeable".
+present_effect = "cas"
+present_cas_additional_sharpness = 0.7
+
+# Log file policy: one file, logs/bakugan.log, replaced at every start with at most one rotated copy of 5 MB, so the
+# folder does not grow. The flight recorder (logs/flight.txt, the previous run as flight.prev.txt) is on as well: one
+# short line per second, a few hundred KB.
+log_single_file = true
+log_max_files = 1
+
+# The game's loose files are read directly. The SDK's asset pack (a 3.2 GB cache built from game_root at the first start,
+# minutes of black screen on the Switch: the first hang of the port) is off, and so is building it.
+asset_pack = false
+asset_pack_build = false
+
+# Diagnostics that the test tomls turn on: the profiler's 10-second report (logs/rex/rex_profile.log) and the stack
+# sampler are off in the release; the flight recorder and the log stay on.
+switch_profile_report = false
+switch_profile_stacks = false
+sa2_io_trace = 0

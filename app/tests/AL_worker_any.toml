@@ -1,0 +1,15 @@
+# Release behaviour (dynamic scale, CAS, native renderer) plus: the CPU stack sampler, GPU timestamps per pass category,
+# and once every 10 s one serialized diagnostic frame (per-draw GPU time, the top individual draws, and the GPU time of
+# every EDRAM transfer pair). The render height is NOT pinned: dynamic scaling runs as for a player. Numbered logs.
+log_level = "info"
+log_to_file = true
+log_single_file = false
+bakugan_shader_misses = "shader_dump"
+switch_profile_report = true
+switch_profile_stacks = true
+bakugan_gpu_marks_categories = true
+bakugan_native_stats_per_draw_s = 10
+
+# Deferred-recording worker affinity experiment (fire arena: the ring thread waited 5.2 s per 10 s for the worker, which was
+# pinned to the default core 0 and ran at 73 %): -1 = any of cores 0-2 (ideal 2), 2 = core 2 only.
+bakugan_native_deferred_worker_core = -1

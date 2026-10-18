@@ -1,0 +1,25 @@
+# Debug settings for hardware testing (the built-in defaults have logging off). Keys here override the NRO's defaults.
+log_level = "info"
+log_to_file = true
+asset_pack = false
+asset_pack_build = false
+input_xbox_layout = false
+input_joycon_sideways = true
+bakugan_shader_misses = "shader_dump"
+switch_profile_stacks = true
+switch_profile_report = true
+sa2_io_trace = 0
+bakugan_native_conversion_frag = true
+
+# Dynamic render scale (performance-fidelity branch): steps the render height down by 180 px while the GPU is the
+# limit (handheld: 720 -> 540, docked: 1080 -> 720) and back up with headroom. Look for "[res] dynamic:" in the log.
+bakugan_render_dynamic = true
+
+# Hang hunt: stack sampling on (what the threads run while the character-select load spins), flight recorder at logs\flight.txt.
+
+
+bakugan_render_dynamic_min_height_handheld = 540
+
+
+# development runs keep one numbered log per run (the release default is one replaced file)
+log_single_file = false

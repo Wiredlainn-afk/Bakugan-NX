@@ -1,0 +1,18 @@
+# Code generation options for speed (optimised codegen, set 1 of 3): the guest's condition registers, ctr, xer and the
+# lwarx reservation as C++ locals, no mfmsr/mtmsrd fences or global lock around guest atomic sequences (a stwcx. is a
+# compare-and-swap already), D-form loads/stores split as base + zext(reg) + disp, fctiwz inline.
+# Written by hand for bakugan-nx (2026-10-15). Set 2 (non_volatile_as_local, elide_lr_stores, fp_moves_modeless) and
+# set 3 (non_argument_as_local) are separate steps. Keep the classic generator output of a first run as a backup to diff against.
+cr_as_local = true
+ctr_as_local = true
+xer_as_local = true
+reserved_as_local = true
+skip_msr = true
+dform_disp_split = true
+fctiwz_inline = true
+# Set 2 (2026-10-17): the guest's non-volatile registers (r14-r31, f14-f31, v14-v31/v64-v127) as C++ locals, no link register stores,
+# float moves without FPCR mode switches. Hooks that read ctx.lr or a non-volatile register no longer work (none left: the
+# sound-sleep, limiter-yield and movie hooks use thread-local flags and the call rhythm).
+non_volatile_as_local = true
+elide_lr_stores = true
+fp_moves_modeless = true

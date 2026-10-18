@@ -1,0 +1,16 @@
+# Release behaviour (dynamic scale, CAS, native renderer) plus: the CPU stack sampler, GPU timestamps per pass category,
+# and once every 10 s one serialized diagnostic frame (per-draw GPU time, the top individual draws, and the GPU time of
+# every EDRAM transfer pair). The render height is NOT pinned: dynamic scaling runs as for a player. Numbered logs.
+log_level = "info"
+log_to_file = true
+log_single_file = false
+bakugan_shader_misses = "shader_dump"
+switch_profile_report = true
+switch_profile_stacks = true
+bakugan_gpu_marks_categories = true
+bakugan_native_stats_per_draw_s = 10
+# AO: AK plus the ordered log of every EDRAM transfer of 3 consecutive frames at frame 6000 (about 200 s after the start: be in a
+# heavy battle then, the water arena) and the GPU mark sequence of 6 work slots at 200 s.
+bakugan_diag_transfer_log_from = 6000
+bakugan_diag_transfer_log_frames = 3
+bakugan_diag_dump_marks_s = 200

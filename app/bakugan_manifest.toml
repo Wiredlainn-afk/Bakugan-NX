@@ -1,0 +1,24 @@
+# ReXGlue recompilation manifest for Bakugan: Battle Brawlers (Xbox 360 disc, title ID 41560857 (AV 2135), default.xex).
+#
+# default.xex: original PE name bg.exe, image base 0x82000000, entry point 0x823BCB28, image size 0x00AB0000,
+# XEX version 0.0.0.1, AES + basic (zero-block) compression, imports xam.xex and xboxkrnl.exe only
+# (tools/xex_header.py, stage 1, 2026-10-12).
+#
+# No extra code modules are declared: the disc holds a single XEX, and no file in media/d00.bin's 6373-name index is a code module
+# (stage 1 scan of every extracted file for XEX2/XEX1 magic found only default.xex).
+
+[project]
+name = "bakugan"
+sdk_version = "0.10.0"
+# The extracted disc (tools/extract_iso.py -> assets/game_root), with default.xex at its root. Nothing from the game is
+# distributed with this project.
+game_root = "../assets/game_root"
+
+[entrypoint]
+file_path = "../assets/game_root/default.xex"
+out_directory_path = "generated/default"
+
+# The includes are processed before this table, so whatever is set here overrides what is included.
+#   overrides.toml       written by hand: code the automatic function discovery misses, each with its evidence
+#   codegen_flavor.toml  the codegen flavour (empty = classic)
+includes = ["overrides.toml", "codegen_flavor.toml"]

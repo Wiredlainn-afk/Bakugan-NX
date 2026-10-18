@@ -1,0 +1,47 @@
+# Debug settings for hardware testing (the built-in defaults have logging off). Keys here override the NRO's defaults.
+log_level = "info"
+log_to_file = true
+
+# Read the plain game_root folder directly (no 3 GB asset pack build at startup).
+asset_pack = false
+asset_pack_build = false
+
+# Face buttons by letter: the Switch's A acts as the Xbox A, so the letters in the on-screen prompts are the pad's
+# letters (as in nfsmw-nx). true = by position (Switch B acts as Xbox A).
+input_xbox_layout = false
+input_joycon_sideways = true
+
+# Shader discovery: every shader the library lacks is written, once each, to sdmc:/switch/bakugan-nx/shader_dump/
+# (discovery/, missing/, variants/). Copy that folder to the PC afterwards: it extends the shader library.
+bakugan_shader_misses = "shader_dump"
+
+# GPU time per render pass (shows in the log every 10 s as "GPU time by pass"). A diagnostic: it costs a little.
+bakugan_gpu_marks_categories = true
+bakugan_gpu_marks_each_pass = true
+
+# Stack sampling on: shows where each thread sits (needed to find what the "Now Loading" screen waits for).
+switch_profile_stacks = false
+switch_profile_report = true
+
+# The I/O trace is no longer needed.
+sa2_io_trace = 0
+
+# Needed by every test: fragment passes for the colour conversions (the earlier test B was a clear gain).
+bakugan_native_conversion_frag = true
+
+# Performance stage: list which EDRAM transfer pairs (and draws) cost the conversions (diagnostic, small CPU cost).
+bakugan_native_edram4_pair_report = true
+
+# Measuring only (costs GPU time): fragments, vertices, primitives per pass type, and per pixel shader once per 10 s.
+bakugan_native_stats_pipeline = true
+bakugan_native_stats_per_draw_s = 10
+
+# One frame's full GPU timeline (every interval over 0.05 ms, 6 consecutive submissions) every 20 s.
+bakugan_diag_dump_marks_s = 20
+
+
+# A/V sync test J: audio output queue 20 frames (~107 ms; the default 10 = 53 ms) so the sound reaches the speakers later.
+audio_switch_frames_in_queue = 20
+
+# development runs keep one numbered log per run (the release default is one replaced file)
+log_single_file = false

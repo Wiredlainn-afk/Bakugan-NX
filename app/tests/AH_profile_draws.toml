@@ -1,0 +1,29 @@
+# Debug settings for hardware testing (the built-in defaults have logging off). Keys here override the NRO's defaults.
+log_level = "info"
+log_to_file = true
+asset_pack = false
+asset_pack_build = false
+input_xbox_layout = false
+input_joycon_sideways = true
+bakugan_shader_misses = "shader_dump"
+switch_profile_stacks = false
+switch_profile_report = true
+sa2_io_trace = 0
+bakugan_native_conversion_frag = true
+
+# Profile run that starts exactly like the working tests (dynamic render scale on, 720p start): per-category GPU
+# times, one frame's timeline every 20 s, per-shader costs once per 10 s, transfer pairs.
+bakugan_render_dynamic = false
+bakugan_gpu_marks_categories = true
+bakugan_diag_dump_marks_s = 20
+bakugan_native_stats_per_draw_s = 10
+bakugan_native_edram4_pair_report = true
+
+# Held at 450p after 45 s (starts at 720) to split the frame into resolution-dependent and fixed GPU cost.
+bakugan_render_force_after_s = 45
+bakugan_render_force_height_handheld = 450
+
+bakugan_diag_draw_log = true
+
+# development runs keep one numbered log per run (the release default is one replaced file)
+log_single_file = false

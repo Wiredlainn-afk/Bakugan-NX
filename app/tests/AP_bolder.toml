@@ -1,0 +1,13 @@
+# Release behaviour (dynamic scale, CAS, native renderer) plus: the CPU stack sampler, GPU timestamps per pass category,
+# and once every 10 s one serialized diagnostic frame (per-draw GPU time, the top individual draws, and the GPU time of
+# every EDRAM transfer pair). The render height is NOT pinned: dynamic scaling runs as for a player. Numbered logs.
+log_level = "info"
+log_to_file = true
+log_single_file = false
+bakugan_shader_misses = "shader_dump"
+switch_profile_report = true
+switch_profile_stacks = true
+bakugan_gpu_marks_categories = true
+bakugan_native_stats_per_draw_s = 10
+# AK plus a bolder climb: the next height is tried when the p90 GPU busy of the current one times the height ratio is under 86 % (default 80 %).
+bakugan_render_dynamic_up_util = 0.86

@@ -1,0 +1,857 @@
+# Bakugan: Battle Brawlers analysis corrections for the code generator.
+#
+# Every entry needs its evidence (which tool or which log found it). The tools that produce candidates:
+#   tools/find_gaps.py, tools/gap_fixpoint.py   code the automatic discovery left without a function
+#   tools/pointer_scan.py, pointer_fixpoint.py  code pointers stored in data (vtables, callback tables)
+#   tools/switch_check.py                       truncated jump tables
+#   tools/runtime_gap_resolver.py               "Call to invalid or unregistered function" from a game log
+
+# The CRT's setjmp/longjmp (root keys: they must stay outside any table), found by shape in the generated code
+# (2026-10-12, vector load/store census of the generated functions):
+#   setjmp  0x828B3870: stfd f14-f31 + 64 x stvx128 into r3's buffer, mflr/mfcr, `std r1,144(r3)`, `li r3,0`, blr
+#   longjmp 0x828B3550: the mirror image (64 x lvx128 from r7 = the buffer, `ld r1,144(r7)`, mtlr, mtcrf), returns
+#           r4 (or 1 when r4 is 0); a non-zero word at +312 takes the unwinding path (calls 0x823F7090/0x828ECBE4)
+setjmp_address = 0x828B3870
+longjmp_address = 0x828B3550
+
+[functions]
+
+# Structural gap scan, fixpoint pass 7 (tools/gap_fixpoint.py).
+"0x824A11F0" = { }
+"0x824A1250" = { }
+"0x824E1648" = { }
+
+# Structural gap scan, fixpoint pass 6 (tools/gap_fixpoint.py).
+"0x824A11E8" = { }
+"0x824A1248" = { }
+"0x824E1640" = { }
+
+# Structural gap scan, fixpoint pass 5 (tools/gap_fixpoint.py).
+"0x824A11E0" = { }
+"0x824A1200" = { }
+"0x824A1240" = { }
+"0x824E162C" = { share_registers = true, keep_saves = true }
+"0x824E165C" = { }
+
+# Structural gap scan, fixpoint pass 4 (tools/gap_fixpoint.py).
+"0x8218A848" = { }
+"0x824A11F8" = { }
+"0x824A1210" = { }
+"0x824A1238" = { }
+"0x824E1650" = { }
+"0x824E1674" = { }
+"0x824E16B0" = { }
+
+# Structural gap scan, fixpoint pass 3 (tools/gap_fixpoint.py).
+"0x8218A838" = { }
+"0x824A1208" = { }
+"0x824A1230" = { }
+"0x824E1668" = { }
+"0x824E16A4" = { }
+
+# Structural gap scan, fixpoint pass 2 (tools/gap_fixpoint.py).
+"0x8218A828" = { }
+"0x8243E920" = { }
+"0x8247C988" = { }
+"0x824965A0" = { }
+"0x824A1218" = { }
+"0x824A1228" = { }
+"0x824E1680" = { }
+"0x824E1698" = { }
+"0x8272D420" = { }
+
+# Structural gap scan, fixpoint pass 1 (tools/gap_fixpoint.py).
+"0x82130C90" = { }
+"0x82132800" = { }
+"0x82170DE8" = { }
+"0x82171100" = { }
+"0x8217B4F8" = { }
+"0x8218A818" = { }
+"0x8218B348" = { }
+"0x8218C460" = { }
+"0x8218C4B0" = { }
+"0x8218C560" = { }
+"0x821A4120" = { }
+"0x821B25C8" = { }
+"0x821BBED8" = { }
+"0x821BBFF8" = { }
+"0x821C4AB0" = { }
+"0x821C5398" = { }
+"0x821C70C0" = { }
+"0x821C7CA0" = { }
+"0x821E3B40" = { }
+"0x821E45D0" = { }
+"0x821E46A0" = { }
+"0x821EB3A0" = { }
+"0x821EEFB0" = { }
+"0x821F9928" = { }
+"0x821FBDD8" = { }
+"0x821FC900" = { }
+"0x822034C0" = { }
+"0x8220B068" = { }
+"0x8220BBD8" = { }
+"0x82212010" = { }
+"0x822121A0" = { }
+"0x8221B678" = { }
+"0x82277478" = { }
+"0x82281B18" = { }
+"0x82286F38" = { }
+"0x82290270" = { }
+"0x822E31C8" = { }
+"0x822E3D78" = { }
+"0x8231D27C" = { }
+"0x823458D8" = { }
+"0x82358638" = { }
+"0x82358660" = { }
+"0x8235A944" = { }
+"0x8235AD90" = { }
+"0x8235AF00" = { }
+"0x82365610" = { }
+"0x82365810" = { }
+"0x82365850" = { }
+"0x823668C8" = { }
+"0x82368198" = { }
+"0x8236C418" = { }
+"0x82371B50" = { }
+"0x82371E80" = { }
+"0x82371EC0" = { }
+"0x82373260" = { }
+"0x8238DB78" = { }
+"0x8238E148" = { }
+"0x8239B898" = { }
+"0x8239E0A8" = { }
+"0x823A05F0" = { }
+"0x823A1DE0" = { }
+"0x823ABE98" = { }
+"0x823AC0B8" = { }
+"0x823B2F80" = { }
+"0x823B5EF8" = { }
+"0x823B6660" = { }
+"0x823B8A08" = { }
+"0x823CAB00" = { }
+"0x823CC5B8" = { }
+"0x823D3358" = { }
+"0x823DF570" = { }
+"0x823E0F40" = { }
+"0x823F70E8" = { }
+"0x823F7108" = { }
+"0x82400B28" = { }
+"0x82400B50" = { }
+"0x82400B78" = { }
+"0x82404688" = { }
+"0x8240EF00" = { }
+"0x8240EF28" = { }
+"0x8240EF50" = { }
+"0x8240F750" = { }
+"0x82412558" = { }
+"0x8243E908" = { }
+"0x8247C978" = { }
+"0x8247DD18" = { }
+"0x8247DD78" = { }
+"0x8247E1D8" = { }
+"0x8247E200" = { }
+"0x8247E228" = { }
+"0x8247E250" = { }
+"0x8247E278" = { }
+"0x8247E2A0" = { }
+"0x8247E2C8" = { }
+"0x8247E518" = { }
+"0x824917A8" = { }
+"0x824917D8" = { }
+"0x82495E98" = { }
+"0x82496590" = { }
+"0x824992E0" = { }
+"0x82499320" = { }
+"0x82499E30" = { }
+"0x82499E70" = { }
+"0x824A1220" = { }
+"0x824A9330" = { }
+"0x824A9360" = { }
+"0x824E1560" = { }
+"0x824E168C" = { }
+"0x825A0408" = { }
+"0x8263B370" = { }
+"0x8265A128" = { }
+"0x826688B8" = { }
+"0x826ABAF0" = { }
+"0x826B7408" = { }
+"0x82709698" = { share_registers = true, keep_saves = true }
+"0x8271C990" = { }
+"0x827243E8" = { }
+"0x8272D410" = { }
+"0x82735A18" = { }
+"0x82757E50" = { }
+"0x827583A0" = { }
+"0x827583F8" = { }
+"0x827585C8" = { }
+"0x8276A618" = { }
+"0x82774700" = { }
+"0x82777370" = { }
+"0x8277DF58" = { }
+"0x8277F510" = { }
+"0x82780AC0" = { }
+"0x82794D58" = { }
+"0x82797C18" = { }
+"0x827A9C78" = { }
+"0x827CDCB0" = { }
+"0x827D9550" = { }
+"0x82803558" = { }
+"0x8280DC28" = { }
+"0x82824ED8" = { }
+"0x8282F218" = { }
+"0x8283D9F8" = { }
+"0x8283DDA8" = { }
+"0x82843798" = { }
+"0x82843CC0" = { }
+"0x828463C8" = { }
+"0x8284BD20" = { }
+"0x828AF6F0" = { }
+"0x8216EE38" = { }
+"0x8216F098" = { }
+"0x821C05A0" = { }
+"0x823E9810" = { }
+"0x823E9830" = { }
+"0x82400F70" = { }
+"0x824089A0" = { }
+"0x826C1CC8" = { }
+"0x82770818" = { }
+
+# First codegen (2026-10-12): 110 direct branches (`b`) to addresses automatic discovery had not assigned to any function
+# ("target not in any function"); the callers are listed. No sizes imposed.
+"0x82133788" = { }  # from 0x821337AC
+"0x82133B88" = { }  # from 0x82133BAC
+"0x8213D1F4" = { }  # from 0x8213D218
+"0x8213DA50" = { }  # from 0x8213DA6C
+"0x8214EF00" = { }  # from 0x8214EF24
+"0x8214EF4C" = { }  # from 0x8214EF70
+"0x8214EFF0" = { }  # from 0x8214F014
+"0x8214F03C" = { }  # from 0x8214F060
+"0x8214F0E0" = { }  # from 0x8214F104
+"0x8214F12C" = { }  # from 0x8214F150
+"0x8214F1E4" = { }  # from 0x8214F208
+"0x8214F288" = { }  # from 0x8214F2AC
+"0x8214F328" = { }  # from 0x8214F34C
+"0x8214F374" = { }  # from 0x8214F398
+"0x8214F418" = { }  # from 0x8214F43C
+"0x8214F4B8" = { }  # from 0x8214F4DC
+"0x8214F558" = { }  # from 0x8214F57C
+"0x8214F60C" = { }  # from 0x8214F630
+"0x82152170" = { }  # from 0x82152194
+"0x82152250" = { }  # from 0x82152274
+"0x82152330" = { }  # from 0x82152354
+"0x82152418" = { }  # from 0x82152434
+"0x821524F0" = { }  # from 0x82152514
+"0x821525D0" = { }  # from 0x821525F4
+"0x821526B0" = { }  # from 0x821526D4
+"0x82152790" = { }  # from 0x821527B4
+"0x82152870" = { }  # from 0x82152894
+"0x82152918" = { }  # from 0x82152934
+"0x821615BC" = { }  # from 0x821615E0
+"0x82161674" = { }  # from 0x82161698
+"0x8216172C" = { }  # from 0x82161750
+"0x82162140" = { }  # from 0x8216215C
+"0x82162220" = { }  # from 0x8216223C
+"0x82162300" = { }  # from 0x8216231C
+"0x82177930" = { }  # from 0x82177954
+"0x821779D0" = { }  # from 0x821779F4
+"0x82177A70" = { }  # from 0x82177A94
+"0x821787F8" = { }  # from 0x8217881C
+"0x821788D8" = { }  # from 0x821788FC
+"0x821789B8" = { }  # from 0x821789DC
+"0x82186728" = { }  # from 0x8218674C
+"0x821867C8" = { }  # from 0x821867EC
+"0x82186800" = { }  # from 0x8218681C
+"0x82186830" = { }  # from 0x82186854
+"0x821A44DC" = { }  # from 0x821A4500
+"0x821A49F8" = { }  # from 0x821A4A14
+"0x821A64D4" = { }  # from 0x821A64F8
+"0x821A6A38" = { }  # from 0x821A6A54
+"0x821C4CE4" = { }  # from 0x821C4D04
+"0x821C513C" = { }  # from 0x821C5160
+"0x821E2A7C" = { }  # from 0x821E2AB8
+"0x821E3C10" = { }  # from 0x821E3C34
+"0x821E3CE0" = { }  # from 0x821E3D04
+"0x821E4638" = { }  # from 0x821E465C
+"0x821E4B7C" = { }  # from 0x821E4BA0
+"0x8220B1F4" = { }  # from 0x8220B214
+"0x8220B39C" = { }  # from 0x8220B3C0
+"0x82219F34" = { }  # from 0x82219F58
+"0x8221A140" = { }  # from 0x8221A164
+"0x8221A178" = { }  # from 0x8221A194
+"0x8221B57C" = { }  # from 0x8221B5A0
+"0x822C9270" = { }  # from 0x822C9294
+"0x822C92A8" = { }  # from 0x822C92CC
+"0x822C9934" = { }  # from 0x822C9954
+"0x822C997C" = { }  # from 0x822C99A0
+"0x822C99F4" = { }  # from 0x822C9A14
+"0x822C9A3C" = { }  # from 0x822C9A60
+"0x822C9AB4" = { }  # from 0x822C9AD4
+"0x822C9EFC" = { }  # from 0x822C9F20
+"0x822C9F84" = { }  # from 0x822C9FA8
+"0x822CA00C" = { }  # from 0x822CA030
+"0x82345B1C" = { }  # from 0x82345B3C
+"0x82345B64" = { }  # from 0x82345B88
+"0x82345D14" = { }  # from 0x82345D38
+"0x82357020" = { }  # from 0x82357044
+"0x8235A828" = { }  # from 0x82364B08
+"0x8235A92C" = { }  # from 0x8235A948
+"0x8235E288" = { }  # from 0x8235E2AC
+"0x8235E2C0" = { }  # from 0x8235E2DC
+"0x8235E2F0" = { }  # from 0x8235E314
+"0x8235E328" = { }  # from 0x8235E344
+"0x8235E358" = { }  # from 0x8235E37C
+"0x8235E390" = { }  # from 0x8235E3AC
+"0x8235E3C0" = { }  # from 0x8235E3E4
+"0x8235E3F8" = { }  # from 0x8235E414
+"0x8235E428" = { }  # from 0x8235E44C
+"0x8235E460" = { }  # from 0x8235E47C
+"0x8235E490" = { }  # from 0x8235E4B4
+"0x8235E668" = { }  # from 0x8235E68C
+"0x8235F528" = { }  # from 0x8235F54C
+"0x8239E554" = { }  # from 0x8239E574
+"0x8239E59C" = { }  # from 0x8239E5C0
+"0x8239E7B4" = { }  # from 0x8239E7D8
+"0x823A4764" = { }  # from 0x823A4784
+"0x823A479C" = { }  # from 0x823A47BC
+"0x823A47E4" = { }  # from 0x823A4808
+"0x823ABA64" = { }  # from 0x823ABA88
+"0x823ABAEC" = { }  # from 0x823ABB10
+"0x823B31BC" = { }  # from 0x823B31E0
+"0x823B8B94" = { }  # from 0x823B8BB4
+"0x823B8D3C" = { }  # from 0x823B8D60
+"0x823C4DB8" = { }  # from 0x823C4DD4
+"0x823C5328" = { }  # from 0x823C5344
+"0x823C9A38" = { }  # from 0x823C9A5C
+"0x823CA538" = { }  # from 0x823CA55C
+"0x823CA584" = { }  # from 0x823CA5A8
+"0x823FDA08" = { }  # from 0x823FDA14
+"0x8240AD90" = { }  # from 0x8240AE64
+"0x8240C7B8" = { }  # from 0x8240C93C
+"0x8240DBE8" = { }  # from 0x8240DCBC
+
+# Code pointers into unclaimed gaps, stored in data (vtables, callback tables) or built in code (lis/addi:
+# callbacks passed at run time), accepted by tools/pointer_fixpoint.py pass 1: the scratch listing fits
+# in the gap (or continues only into a registered function it branches to: "then the registered tail"),
+# ends in a terminator and reads no register that is undefined at a function entry. The comment says
+# where the pointer is stored ("pointer at") or built ("built at", inside the code range).
+"0x8218B370" = { }  # 8 instructions, built at 0x8218AA04
+"0x8218B390" = { }  # 12 instructions, built at 0x8218AA28
+"0x8218B5A0" = { }  # 8 instructions, built at 0x8218AB24
+"0x8218BDB8" = { }  # 8 instructions, built at 0x8218ADF4
+"0x8218C3D8" = { }  # 8 instructions, built at 0x8218AFC8
+"0x8218C3F8" = { }  # 8 instructions, built at 0x8218AFEC
+"0x8218C418" = { }  # 18 instructions, built at 0x8218B010
+"0x8218C550" = { }  # 4 instructions, built at 0x8218B07C
+"0x821C3F58" = { }  # 4 instructions, pointer at 0x82000FC8 (+1 more)
+"0x821C3F68" = { }  # 5 instructions, pointer at 0x82000FE0 (+1 more)
+"0x821EFA20" = { }  # 8 instructions, pointer at 0x82005504
+"0x821F02E0" = { }  # 4 instructions, pointer at 0x82005510 (+10 more)
+"0x821F02F0" = { }  # 2 instructions, pointer at 0x82005520 (+11 more)
+"0x821F0CA0" = { }  # 4 instructions, pointer at 0x820055E0
+"0x822068D0" = { }  # 4 instructions, pointer at 0x82007918 (+1 more)
+"0x8239B888" = { }  # 4 instructions, pointer at 0x82035194 (+1 more)
+"0x8239BA68" = { }  # 4 instructions, pointer at 0x820351E0 (+1 more)
+"0x8239C138" = { }  # 4 instructions, pointer at 0x82035210 (+1 more)
+"0x824027D8" = { }  # 2 instructions, pointer at 0x8203A110 (+2 more)
+"0x824027E0" = { }  # 2 instructions, pointer at 0x8203A10C (+2 more)
+"0x824027E8" = { }  # 2 instructions, pointer at 0x8203A138 (+2 more)
+"0x824027F0" = { }  # 2 instructions, pointer at 0x8203A134 (+2 more)
+"0x824027F8" = { }  # 2 instructions, pointer at 0x8203A13C (+2 more)
+"0x82402800" = { }  # 2 instructions, pointer at 0x8203A108 (+2 more)
+"0x82402808" = { }  # 2 instructions, pointer at 0x8203A0FC (+2 more)
+"0x82402810" = { }  # 2 instructions, pointer at 0x8203A120 (+2 more)
+"0x82402818" = { }  # 2 instructions, pointer at 0x8203A11C (+2 more)
+"0x82402820" = { }  # 2 instructions, pointer at 0x8203A104 (+2 more)
+"0x82402828" = { }  # 2 instructions, pointer at 0x8203A144
+"0x82402838" = { }  # 2 instructions, pointer at 0x8203A140 (+2 more)
+"0x82402840" = { }  # 2 instructions, pointer at 0x8203A12C (+2 more)
+"0x82402848" = { }  # 2 instructions, pointer at 0x8203A100 (+2 more)
+"0x82402850" = { }  # 2 instructions, pointer at 0x8203A114 (+2 more)
+"0x82402858" = { }  # 2 instructions, pointer at 0x8203A0F8 (+2 more)
+"0x82409210" = { }  # 2 instructions, pointer at 0x8203A4D0
+"0x82409218" = { }  # 2 instructions, pointer at 0x8203A4CC
+"0x82409220" = { }  # 2 instructions, pointer at 0x8203A4D4
+"0x82409228" = { }  # 2 instructions, pointer at 0x8203A4A4
+"0x82409230" = { }  # 2 instructions, pointer at 0x8203A4A0
+"0x82409238" = { }  # 2 instructions, pointer at 0x8203A494
+"0x82409240" = { }  # 2 instructions, pointer at 0x8203A4B4
+"0x82409248" = { }  # 2 instructions, pointer at 0x8203A49C
+"0x82409250" = { }  # 2 instructions, pointer at 0x8203A4DC
+"0x82409260" = { }  # 2 instructions, pointer at 0x8203A4B8
+"0x82409268" = { }  # 2 instructions, pointer at 0x8203A4C4
+"0x82409270" = { }  # 2 instructions, pointer at 0x8203A4C8
+"0x82409278" = { }  # 2 instructions, pointer at 0x8203A4D8
+"0x82409280" = { }  # 2 instructions, pointer at 0x8203A498
+"0x82409288" = { }  # 2 instructions, pointer at 0x8203A4C0
+"0x82409290" = { }  # 2 instructions, pointer at 0x8203A4AC
+"0x82409298" = { }  # 2 instructions, pointer at 0x8203A4B0
+"0x824092A0" = { }  # 2 instructions, pointer at 0x8203A490
+"0x82409638" = { }  # 2 instructions, pointer at 0x8203A554
+"0x82409640" = { }  # 2 instructions, pointer at 0x8203A560
+"0x82409648" = { }  # 2 instructions, pointer at 0x8203A55C
+"0x82409650" = { }  # 2 instructions, pointer at 0x8203A578
+"0x82409658" = { }  # 2 instructions, pointer at 0x8203A574
+"0x82409660" = { }  # 2 instructions, pointer at 0x8203A59C
+"0x82409670" = { }  # 2 instructions, pointer at 0x8203A588
+"0x82409678" = { }  # 2 instructions, pointer at 0x8203A598
+"0x82409680" = { }  # 2 instructions, pointer at 0x8203A584
+"0x82409688" = { }  # 2 instructions, pointer at 0x8203A580
+"0x82409690" = { }  # 2 instructions, pointer at 0x8203A558
+"0x82409698" = { }  # 2 instructions, pointer at 0x8203A56C
+"0x824096A0" = { }  # 2 instructions, pointer at 0x8203A570
+"0x824096A8" = { }  # 2 instructions, pointer at 0x8203A590
+"0x824096B0" = { }  # 2 instructions, pointer at 0x8203A550
+"0x824096B8" = { }  # 2 instructions, pointer at 0x8203A58C
+"0x824096C0" = { }  # 2 instructions, pointer at 0x8203A568
+"0x824096C8" = { }  # 2 instructions, pointer at 0x8203A564
+"0x82409F80" = { }  # 2 instructions, pointer at 0x8203A640
+"0x82409F88" = { }  # 2 instructions, pointer at 0x8203A650
+"0x8240A478" = { }  # 2 instructions, pointer at 0x8203A644
+"0x8240D328" = { }  # 11 in the gap, then the registered tail sub_8240D354, pointer at 0x8203A818
+"0x8240D5E0" = { }  # 2 instructions, pointer at 0x8203A7D8
+"0x8240EA50" = { }  # 2 instructions, pointer at 0x8203A87C
+"0x8240F738" = { }  # 6 instructions, pointer at 0x8203A984
+"0x82410E98" = { }  # 2 instructions, pointer at 0x8203A918
+"0x8243F9B8" = { }  # 2 instructions, pointer at 0x8203F718
+"0x8243F9C8" = { }  # 2 instructions, pointer at 0x8203F724
+"0x8243F9E8" = { }  # 2 instructions, pointer at 0x8203F71C
+"0x8249D2B8" = { }  # 3 instructions, pointer at 0x8205CB1C
+"0x824A48B0" = { }  # 2 instructions, pointer at 0x8205D158
+"0x824A48D0" = { }  # 2 instructions, pointer at 0x8205D15C
+"0x824A7040" = { }  # 2 instructions, pointer at 0x8205D1B8
+"0x824A7060" = { }  # 2 instructions, pointer at 0x8205D1BC
+"0x824A7080" = { }  # 2 instructions, pointer at 0x8205D1B4
+"0x824A70A0" = { }  # 2 instructions, pointer at 0x8205D1C0
+"0x824A7288" = { }  # 8 instructions, pointer at 0x8205D208
+"0x824A72A8" = { }  # 8 instructions, pointer at 0x8205D20C
+"0x824A72C8" = { }  # 8 instructions, pointer at 0x8205D210
+"0x824A72E8" = { }  # 8 instructions, pointer at 0x8205D214
+"0x824A7308" = { }  # 8 instructions, pointer at 0x8205D218
+"0x824A7328" = { }  # 8 instructions, pointer at 0x8205D21C
+"0x824A7348" = { }  # 8 instructions, pointer at 0x8205D220
+"0x824A7368" = { }  # 8 instructions, pointer at 0x8205D224
+"0x824A7388" = { }  # 8 instructions, pointer at 0x8205D228
+"0x824A73A8" = { }  # 8 instructions, pointer at 0x8205D22C
+"0x824A8E38" = { }  # 4 instructions, built at 0x824AB670
+"0x824AEAB8" = { }  # 2 instructions, pointer at 0x8205D144 (+1 more)
+"0x8268370C" = { }  # 3 instructions, built at 0x826836F8
+"0x826B6A10" = { }  # 4 instructions, pointer at 0x820AC7B4 (+2 more)
+"0x826B6A20" = { }  # 4 instructions, pointer at 0x820AC7B8 (+2 more)
+"0x826B6A30" = { }  # 4 instructions, pointer at 0x820AC7BC (+2 more)
+"0x826B6E58" = { }  # 10 instructions, pointer at 0x820AC97C (+2 more)
+"0x826B6E80" = { }  # 10 instructions, pointer at 0x820AC980 (+2 more)
+"0x826B6EA8" = { }  # 10 instructions, pointer at 0x820AC984 (+2 more)
+"0x826B6ED0" = { }  # 10 instructions, pointer at 0x820AC988 (+2 more)
+"0x826B7300" = { }  # 8 instructions, pointer at 0x820AC9BC
+"0x826B7320" = { }  # 1 instructions, pointer at 0x820ACA58
+"0x826B7348" = { }  # 8 instructions, pointer at 0x820ACC44
+"0x826B7368" = { }  # 4 instructions, built at 0x826C0BDC (+3 more)
+"0x826B7378" = { }  # 4 instructions, built at 0x826C0D04
+"0x826B7388" = { }  # 4 instructions, built at 0x826C1004 (+1 more)
+"0x826B7398" = { }  # 4 instructions, built at 0x826C1054
+"0x826B73A8" = { }  # 4 instructions, built at 0x826C0DE4 (+1 more)
+"0x826B73B8" = { }  # 4 instructions, built at 0x826C0B3C
+"0x826B73C8" = { }  # 4 instructions, built at 0x826C10A4 (+1 more)
+"0x826B73D8" = { }  # 4 instructions, built at 0x826C0E34 (+1 more)
+"0x826B73E8" = { }  # 4 instructions, built at 0x826C0B8C
+"0x826B73F8" = { }  # 4 instructions, built at 0x826C10F4
+"0x826C28C8" = { }  # 2 instructions, pointer at 0x820B6DF8 (+3 more)
+"0x8272A9C8" = { }  # 4 instructions, built at 0x8272BC54
+"0x8272A9D8" = { }  # 29 instructions, built at 0x8272BC60
+"0x82734728" = { }  # 2 instructions, built at 0x82738354 (+1 more)
+"0x8283D7D8" = { }  # 20 instructions, pointer at 0x820DD4C8
+"0x8283D828" = { }  # 6 in the gap, then the registered tail sub_8283D840, pointer at 0x820DD4D0
+"0x8283D9A8" = { }  # 20 instructions, pointer at 0x820DD558
+"0x82887910" = { }  # 2 instructions, pointer at 0x820E3530 (+1 more)
+"0x82899EC8" = { }  # 11 instructions, pointer at 0x820E39B4 (+15 more)
+
+# Jump tables (tools/switch_check.py, 2026-10-12; evidence in each comment)
+# Two vtable-like pointers (tools/pointer_audit.py, 2026-10-12) that tools/pointer_fixpoint.py rejected as
+# "padding/invalid": MSVC checked-iterator bounds-check trap (`twi 31,r0,22` after `blt cr6`) is real code. Both are
+# small functions ending in blr, 2 of the 6 neighbouring words at the pointer are registered functions.
+"0x823703D0" = { }  # 14 instructions ending in blr, pointer at 0x82032ED4 (vtable-like)
+"0x823789A0" = { }  # same shape (lwz 12(r4); lhz 10(r3); checked index), pointer at 0x820336F4 (vtable-like)
+
+# tools/switch_check.py ("table jumps with no generated code": bctr 0x82683708, byte table 0x820AB4C0, bound 16).
+# 0x826836D8..0x8268370C is a 52-byte leaf function in a gap after .pdata function 0x82683138 (ends 0x826836D8):
+# clrlwi r11,r3,24; cmplwi 15; bgt 0x826837CC; byte table -> 0x8268370C + offset; mtctr; bctr. Reads only r3
+# (an argument); the 16 cases are already registered functions (lis/addi/blr). Gap pass 1 listed it (52 bytes)
+# but did not accept it (its terminator is a bctr).
+"0x826836D8" = { }
+
+# sub_826628C0: seven cases of its 64-entry jump table (table at 0x820A0AC0, bctr at 0x826629EC) land inside the two
+# .pdata entries that follow it (0x82662B60..0x82662BE8 and 0x82662C88..0x82662D60): compiler-split blocks that use
+# the parent's frame. Seen as "Jump target 0x82662C98 unresolved at bctr 0x826629EC" once the table was extended
+# (a target must lie inside the function or be a function start). The function is declared as large as the cluster
+# so the cases become internal labels. Evidence: tools/pdata_table.py, tools/switch_check.py (2026-10-12).
+"0x826628C0" = { size = 0x4A0, share_registers = true, keep_saves = true }
+
+
+
+# sub_826628C0: byte table at 0x820A0AC0, 64 cases (bound at 0x826629C4); generated 17 cases (tools/switch_check.py)
+
+# non_volatile_as_local (codegen set 2, 2026-10-17): functions that read a non-volatile register their caller set, directly or by
+# passing it on to a callee that reads it (tools/read_before_write_chain.py on code generated without these marks). The whole-program
+# compiler passes extra inputs in r14-r31/f14-f31/v14-v31 to ordinary functions that keep the usual prologue: share_registers (ctx
+# registers, callers copy their locals in and out) with keep_saves (their __savegprlr/__restgprlr stay real, so they hand the
+# caller its registers back). Known false alarms of read_before_write.py, not marked: sub_823BD500, sub_823BD890 (xor rX,rX,rX),
+# sub_828C7270 (subfe rX,rX,rX), the guest setjmp sub_828B3870.
+"0x82140DA0" = { share_registers = true, keep_saves = true }
+"0x82140E58" = { share_registers = true, keep_saves = true }
+"0x82142528" = { share_registers = true, keep_saves = true }
+"0x82147138" = { share_registers = true, keep_saves = true }
+"0x8216ACB8" = { share_registers = true, keep_saves = true }
+"0x821EF4F0" = { share_registers = true, keep_saves = true }
+"0x821EF8C0" = { share_registers = true, keep_saves = true }
+"0x821EFE58" = { share_registers = true, keep_saves = true }
+"0x821F40C8" = { share_registers = true, keep_saves = true }
+"0x821FC1E8" = { share_registers = true, keep_saves = true }
+"0x821FC910" = { share_registers = true, keep_saves = true }
+"0x821FC918" = { share_registers = true, keep_saves = true }
+"0x821FCB30" = { share_registers = true, keep_saves = true }
+"0x821FD2E0" = { share_registers = true, keep_saves = true }
+"0x821FD418" = { share_registers = true, keep_saves = true }
+"0x821FE4B0" = { share_registers = true, keep_saves = true }
+"0x821FEC40" = { share_registers = true, keep_saves = true }
+"0x821FF648" = { share_registers = true, keep_saves = true }
+"0x822026C8" = { share_registers = true, keep_saves = true }
+"0x82205CD8" = { share_registers = true, keep_saves = true }
+"0x822062A0" = { share_registers = true, keep_saves = true }
+"0x82222F80" = { share_registers = true, keep_saves = true }
+"0x823A7EE8" = { share_registers = true, keep_saves = true }
+"0x823E8D54" = { share_registers = true, keep_saves = true }
+"0x824E1A88" = { share_registers = true, keep_saves = true }
+"0x824F2150" = { share_registers = true, keep_saves = true }
+"0x824F5948" = { share_registers = true, keep_saves = true }
+"0x824F6510" = { share_registers = true, keep_saves = true }
+"0x824F7A40" = { share_registers = true, keep_saves = true }
+"0x82531A70" = { share_registers = true, keep_saves = true }
+"0x82531CE8" = { share_registers = true, keep_saves = true }
+"0x82531FA8" = { share_registers = true, keep_saves = true }
+"0x8253AEF8" = { share_registers = true, keep_saves = true }
+"0x825413B8" = { share_registers = true, keep_saves = true }
+"0x82549740" = { share_registers = true, keep_saves = true }
+"0x825584A0" = { share_registers = true, keep_saves = true }
+"0x8255D790" = { share_registers = true, keep_saves = true }
+"0x82572268" = { share_registers = true, keep_saves = true }
+"0x82572D70" = { share_registers = true, keep_saves = true }
+"0x825762D0" = { share_registers = true, keep_saves = true }
+"0x8258DC08" = { share_registers = true, keep_saves = true }
+"0x825A0618" = { share_registers = true, keep_saves = true }
+"0x825A06F8" = { share_registers = true, keep_saves = true }
+"0x825A0790" = { share_registers = true, keep_saves = true }
+"0x825A0B40" = { share_registers = true, keep_saves = true }
+"0x825A0D38" = { share_registers = true, keep_saves = true }
+"0x825A0D80" = { share_registers = true, keep_saves = true }
+"0x825A0ED0" = { share_registers = true, keep_saves = true }
+"0x825A0EE0" = { share_registers = true, keep_saves = true }
+"0x825A1160" = { share_registers = true, keep_saves = true }
+"0x825A1290" = { share_registers = true, keep_saves = true }
+"0x825A17D0" = { share_registers = true, keep_saves = true }
+"0x825A1818" = { share_registers = true, keep_saves = true }
+"0x825A1860" = { share_registers = true, keep_saves = true }
+"0x825A1BB8" = { share_registers = true, keep_saves = true }
+"0x825A1C98" = { share_registers = true, keep_saves = true }
+"0x825A1D78" = { share_registers = true, keep_saves = true }
+"0x825A1D88" = { share_registers = true, keep_saves = true }
+"0x825A51E8" = { share_registers = true, keep_saves = true }
+"0x825A5278" = { share_registers = true, keep_saves = true }
+"0x825A56A0" = { share_registers = true, keep_saves = true }
+"0x825ACDB8" = { share_registers = true, keep_saves = true }
+"0x825ACF08" = { share_registers = true, keep_saves = true }
+"0x825C0F50" = { share_registers = true, keep_saves = true }
+"0x825C1588" = { share_registers = true, keep_saves = true }
+"0x825C1B98" = { share_registers = true, keep_saves = true }
+"0x825C1BB8" = { share_registers = true, keep_saves = true }
+"0x825C1E68" = { share_registers = true, keep_saves = true }
+"0x825C1E78" = { share_registers = true, keep_saves = true }
+"0x825C1E98" = { share_registers = true, keep_saves = true }
+"0x825C1EA8" = { share_registers = true, keep_saves = true }
+"0x825C2048" = { share_registers = true, keep_saves = true }
+"0x825C29E8" = { share_registers = true, keep_saves = true }
+"0x825C29F8" = { share_registers = true, keep_saves = true }
+"0x825CFFC8" = { share_registers = true, keep_saves = true }
+"0x825EDFD8" = { share_registers = true, keep_saves = true }
+"0x825EE038" = { share_registers = true, keep_saves = true }
+"0x825EE078" = { share_registers = true, keep_saves = true }
+"0x825EE250" = { share_registers = true, keep_saves = true }
+"0x825EE2B8" = { share_registers = true, keep_saves = true }
+"0x825EE300" = { share_registers = true, keep_saves = true }
+"0x825EE4D0" = { share_registers = true, keep_saves = true }
+"0x825EE530" = { share_registers = true, keep_saves = true }
+"0x825EE570" = { share_registers = true, keep_saves = true }
+"0x82605818" = { share_registers = true, keep_saves = true }
+"0x82605BE0" = { share_registers = true, keep_saves = true }
+"0x82605C68" = { share_registers = true, keep_saves = true }
+"0x82606130" = { share_registers = true, keep_saves = true }
+"0x826068F0" = { share_registers = true, keep_saves = true }
+"0x826070E0" = { share_registers = true, keep_saves = true }
+"0x826093D0" = { share_registers = true, keep_saves = true }
+"0x82609C80" = { share_registers = true, keep_saves = true }
+"0x8260AD90" = { share_registers = true, keep_saves = true }
+"0x8260B188" = { share_registers = true, keep_saves = true }
+"0x8260C3A0" = { share_registers = true, keep_saves = true }
+"0x8260D400" = { share_registers = true, keep_saves = true }
+"0x8260E878" = { share_registers = true, keep_saves = true }
+"0x826117B0" = { share_registers = true, keep_saves = true }
+"0x82614358" = { share_registers = true, keep_saves = true }
+"0x82615A18" = { share_registers = true, keep_saves = true }
+"0x82678E48" = { share_registers = true, keep_saves = true }
+"0x826790D0" = { share_registers = true, keep_saves = true }
+"0x82679198" = { share_registers = true, keep_saves = true }
+"0x826791F8" = { share_registers = true, keep_saves = true }
+"0x82679268" = { share_registers = true, keep_saves = true }
+"0x82679270" = { share_registers = true, keep_saves = true }
+"0x82679278" = { share_registers = true, keep_saves = true }
+"0x826792D8" = { share_registers = true, keep_saves = true }
+"0x82679348" = { share_registers = true, keep_saves = true }
+"0x826793A0" = { share_registers = true, keep_saves = true }
+"0x826796C0" = { share_registers = true, keep_saves = true }
+"0x82679B88" = { share_registers = true, keep_saves = true }
+"0x82679C00" = { share_registers = true, keep_saves = true }
+"0x82679D88" = { share_registers = true, keep_saves = true }
+"0x82679DE8" = { share_registers = true, keep_saves = true }
+"0x8267A7C0" = { share_registers = true, keep_saves = true }
+"0x8267A830" = { share_registers = true, keep_saves = true }
+"0x8267A8B8" = { share_registers = true, keep_saves = true }
+"0x8267ABA8" = { share_registers = true, keep_saves = true }
+"0x8267ABE0" = { share_registers = true, keep_saves = true }
+"0x82688BE8" = { share_registers = true, keep_saves = true }
+"0x8269E360" = { share_registers = true, keep_saves = true }
+"0x8269F2C0" = { share_registers = true, keep_saves = true }
+"0x8269F340" = { share_registers = true, keep_saves = true }
+"0x8269F4B8" = { share_registers = true, keep_saves = true }
+"0x826B43B8" = { share_registers = true, keep_saves = true }
+"0x826B5D00" = { share_registers = true, keep_saves = true }
+"0x82706F90" = { share_registers = true, keep_saves = true }
+"0x827071A0" = { share_registers = true, keep_saves = true }
+"0x827096A0" = { share_registers = true, keep_saves = true }
+"0x8270AC58" = { share_registers = true, keep_saves = true }
+"0x8270ADE8" = { share_registers = true, keep_saves = true }
+"0x8273BDD0" = { share_registers = true, keep_saves = true }
+"0x8273C3F0" = { share_registers = true, keep_saves = true }
+"0x8273C5D8" = { share_registers = true, keep_saves = true }
+"0x8273C6E0" = { share_registers = true, keep_saves = true }
+"0x8273C840" = { share_registers = true, keep_saves = true }
+"0x8277A8F8" = { share_registers = true, keep_saves = true }
+"0x8277B278" = { share_registers = true, keep_saves = true }
+"0x8277B340" = { share_registers = true, keep_saves = true }
+"0x8277B490" = { share_registers = true, keep_saves = true }
+"0x8277B560" = { share_registers = true, keep_saves = true }
+"0x8277B650" = { share_registers = true, keep_saves = true }
+"0x8277B840" = { share_registers = true, keep_saves = true }
+"0x8277B958" = { share_registers = true, keep_saves = true }
+"0x8277BC90" = { share_registers = true, keep_saves = true }
+"0x8277DA40" = { share_registers = true, keep_saves = true }
+"0x82780700" = { share_registers = true, keep_saves = true }
+"0x827829E8" = { share_registers = true, keep_saves = true }
+"0x82785388" = { share_registers = true, keep_saves = true }
+"0x82787280" = { share_registers = true, keep_saves = true }
+"0x82788628" = { share_registers = true, keep_saves = true }
+"0x82798840" = { share_registers = true, keep_saves = true }
+"0x827A0128" = { share_registers = true, keep_saves = true }
+"0x827A2008" = { share_registers = true, keep_saves = true }
+"0x827C4D38" = { share_registers = true, keep_saves = true }
+"0x827C94C8" = { share_registers = true, keep_saves = true }
+"0x827D5C90" = { share_registers = true, keep_saves = true }
+"0x827D6A90" = { share_registers = true, keep_saves = true }
+"0x827DD378" = { share_registers = true, keep_saves = true }
+"0x827DFB70" = { share_registers = true, keep_saves = true }
+"0x827E1E68" = { share_registers = true, keep_saves = true }
+"0x827EAB28" = { share_registers = true, keep_saves = true }
+"0x827EBD50" = { share_registers = true, keep_saves = true }
+"0x827EDCC8" = { share_registers = true, keep_saves = true }
+"0x827EE538" = { share_registers = true, keep_saves = true }
+"0x827EFE90" = { share_registers = true, keep_saves = true }
+"0x827F6B98" = { share_registers = true, keep_saves = true }
+"0x827FB878" = { share_registers = true, keep_saves = true }
+"0x828092A0" = { share_registers = true, keep_saves = true }
+"0x8280B278" = { share_registers = true, keep_saves = true }
+"0x8280C6F8" = { share_registers = true, keep_saves = true }
+"0x8280EBA8" = { share_registers = true, keep_saves = true }
+"0x8280FA90" = { share_registers = true, keep_saves = true }
+"0x8280FF98" = { share_registers = true, keep_saves = true }
+"0x828100C0" = { share_registers = true, keep_saves = true }
+"0x82819890" = { share_registers = true, keep_saves = true }
+"0x828198E8" = { share_registers = true, keep_saves = true }
+"0x8281A1B8" = { share_registers = true, keep_saves = true }
+"0x8281D4F0" = { share_registers = true, keep_saves = true }
+"0x8281E120" = { share_registers = true, keep_saves = true }
+"0x82851D88" = { share_registers = true, keep_saves = true }
+"0x828F9108" = { share_registers = true, keep_saves = true }
+"0x8291ECE0" = { share_registers = true, keep_saves = true }
+"0x8291EFA8" = { share_registers = true, keep_saves = true }
+"0x8291F1B0" = { share_registers = true, keep_saves = true }
+"0x8291F918" = { share_registers = true, keep_saves = true }
+"0x829209E0" = { share_registers = true, keep_saves = true }
+"0x82920DC0" = { share_registers = true, keep_saves = true }
+"0x82921450" = { share_registers = true, keep_saves = true }
+"0x829219A0" = { share_registers = true, keep_saves = true }
+"0x82921F00" = { share_registers = true, keep_saves = true }
+"0x82921F18" = { share_registers = true, keep_saves = true }
+"0x829222C0" = { share_registers = true, keep_saves = true }
+"0x82922580" = { share_registers = true, keep_saves = true }
+"0x829227E8" = { share_registers = true, keep_saves = true }
+"0x82923D48" = { share_registers = true, keep_saves = true }
+"0x82935550" = { share_registers = true, keep_saves = true }
+"0x82937508" = { share_registers = true, keep_saves = true }
+"0x8293D9A8" = { share_registers = true, keep_saves = true }
+"0x8293DC80" = { share_registers = true, keep_saves = true }
+"0x8293DDD0" = { share_registers = true, keep_saves = true }
+"0x8293DF18" = { share_registers = true, keep_saves = true }
+"0x8293E058" = { share_registers = true, keep_saves = true }
+"0x8293E1A0" = { share_registers = true, keep_saves = true }
+"0x8293E3F0" = { share_registers = true, keep_saves = true }
+"0x8293E540" = { share_registers = true, keep_saves = true }
+"0x8293E7A8" = { share_registers = true, keep_saves = true }
+"0x8293E908" = { share_registers = true, keep_saves = true }
+"0x8293EBB0" = { share_registers = true, keep_saves = true }
+"0x8293EF90" = { share_registers = true, keep_saves = true }
+"0x8293F600" = { share_registers = true, keep_saves = true }
+"0x82940558" = { share_registers = true, keep_saves = true }
+"0x82940D60" = { share_registers = true, keep_saves = true }
+"0x82941600" = { share_registers = true, keep_saves = true }
+"0x82941858" = { share_registers = true, keep_saves = true }
+"0x829418C8" = { share_registers = true, keep_saves = true }
+"0x82941A20" = { share_registers = true, keep_saves = true }
+"0x829446E8" = { share_registers = true, keep_saves = true }
+"0x82944878" = { share_registers = true, keep_saves = true }
+"0x829448E8" = { share_registers = true, keep_saves = true }
+"0x82944E48" = { share_registers = true, keep_saves = true }
+"0x829451D0" = { share_registers = true, keep_saves = true }
+"0x829451D8" = { share_registers = true, keep_saves = true }
+"0x82947688" = { share_registers = true, keep_saves = true }
+"0x829477A8" = { share_registers = true, keep_saves = true }
+"0x82947918" = { share_registers = true, keep_saves = true }
+"0x82947A58" = { share_registers = true, keep_saves = true }
+"0x82947C00" = { share_registers = true, keep_saves = true }
+"0x82948AF0" = { share_registers = true, keep_saves = true }
+"0x82973DA0" = { share_registers = true, keep_saves = true }
+"0x82973E48" = { share_registers = true, keep_saves = true }
+"0x82974BA0" = { share_registers = true, keep_saves = true }
+"0x82975000" = { share_registers = true, keep_saves = true }
+
+
+# The movie decoder cluster (everything the frame function sub_825413B8 calls, 116 functions): kept classic (ctx registers, real saves).
+# Console 2026-10-17: with non_volatile_as_local the intro movies pulsed pink/green on ARM (clean on PC).
+"0x823BC090" = { share_registers = true, keep_saves = true }
+"0x823BC1A0" = { share_registers = true, keep_saves = true }
+"0x823BDE70" = { share_registers = true, keep_saves = true }
+"0x823BDEE0" = { share_registers = true, keep_saves = true }
+"0x823BF5C8" = { share_registers = true, keep_saves = true }
+"0x823BF7C8" = { share_registers = true, keep_saves = true }
+"0x823BF8E8" = { share_registers = true, keep_saves = true }
+"0x823BFBD0" = { share_registers = true, keep_saves = true }
+"0x823BFFD8" = { share_registers = true, keep_saves = true }
+"0x823C0980" = { share_registers = true, keep_saves = true }
+"0x823C0AE8" = { share_registers = true, keep_saves = true }
+"0x823C0D28" = { share_registers = true, keep_saves = true }
+"0x823C1780" = { share_registers = true, keep_saves = true }
+"0x823C1FF4" = { share_registers = true, keep_saves = true }
+"0x823C2A28" = { share_registers = true, keep_saves = true }
+"0x823C2CCC" = { share_registers = true, keep_saves = true }
+"0x823C3A88" = { share_registers = true, keep_saves = true }
+"0x823D93D0" = { share_registers = true, keep_saves = true }
+"0x823D9470" = { share_registers = true, keep_saves = true }
+"0x824ED718" = { share_registers = true, keep_saves = true }
+"0x824EE4C8" = { share_registers = true, keep_saves = true }
+"0x824EF2A0" = { share_registers = true, keep_saves = true }
+"0x824EF3C0" = { share_registers = true, keep_saves = true }
+"0x824F7228" = { share_registers = true, keep_saves = true }
+"0x824F74F8" = { share_registers = true, keep_saves = true }
+"0x824F7640" = { share_registers = true, keep_saves = true }
+"0x824F9110" = { share_registers = true, keep_saves = true }
+"0x824FA200" = { share_registers = true, keep_saves = true }
+"0x824FA360" = { share_registers = true, keep_saves = true }
+"0x824FA6A0" = { share_registers = true, keep_saves = true }
+"0x824FAB38" = { share_registers = true, keep_saves = true }
+"0x824FB788" = { share_registers = true, keep_saves = true }
+"0x824FF8B0" = { share_registers = true, keep_saves = true }
+"0x824FFE68" = { share_registers = true, keep_saves = true }
+"0x82500C68" = { share_registers = true, keep_saves = true }
+"0x82501B20" = { share_registers = true, keep_saves = true }
+"0x8250A898" = { share_registers = true, keep_saves = true }
+"0x8250A990" = { share_registers = true, keep_saves = true }
+"0x8250B330" = { share_registers = true, keep_saves = true }
+"0x8250BA78" = { share_registers = true, keep_saves = true }
+"0x8250BAD8" = { share_registers = true, keep_saves = true }
+"0x8250BEC0" = { share_registers = true, keep_saves = true }
+"0x8250CF50" = { share_registers = true, keep_saves = true }
+"0x8250DD18" = { share_registers = true, keep_saves = true }
+"0x8250E510" = { share_registers = true, keep_saves = true }
+"0x8250FD80" = { share_registers = true, keep_saves = true }
+"0x8250FFD0" = { share_registers = true, keep_saves = true }
+"0x82510408" = { share_registers = true, keep_saves = true }
+"0x82510A78" = { share_registers = true, keep_saves = true }
+"0x82510AA0" = { share_registers = true, keep_saves = true }
+"0x82512B58" = { share_registers = true, keep_saves = true }
+"0x82513CD0" = { share_registers = true, keep_saves = true }
+"0x82515258" = { share_registers = true, keep_saves = true }
+"0x8251C670" = { share_registers = true, keep_saves = true }
+"0x8251CCB0" = { share_registers = true, keep_saves = true }
+"0x8251D168" = { share_registers = true, keep_saves = true }
+"0x8251D228" = { share_registers = true, keep_saves = true }
+"0x8251D2F8" = { share_registers = true, keep_saves = true }
+"0x82532200" = { share_registers = true, keep_saves = true }
+"0x825322C8" = { share_registers = true, keep_saves = true }
+"0x82532478" = { share_registers = true, keep_saves = true }
+"0x82534AB0" = { share_registers = true, keep_saves = true }
+"0x82535530" = { share_registers = true, keep_saves = true }
+"0x825376E8" = { share_registers = true, keep_saves = true }
+"0x82537878" = { share_registers = true, keep_saves = true }
+"0x82537F00" = { share_registers = true, keep_saves = true }
+"0x8253C920" = { share_registers = true, keep_saves = true }
+"0x8253DB70" = { share_registers = true, keep_saves = true }
+"0x8253E268" = { share_registers = true, keep_saves = true }
+"0x82544948" = { share_registers = true, keep_saves = true }
+"0x82551350" = { share_registers = true, keep_saves = true }
+"0x82553820" = { share_registers = true, keep_saves = true }
+"0x82553C48" = { share_registers = true, keep_saves = true }
+"0x82557D50" = { share_registers = true, keep_saves = true }
+"0x8255BF60" = { share_registers = true, keep_saves = true }
+"0x8255C390" = { share_registers = true, keep_saves = true }
+"0x8255DD98" = { share_registers = true, keep_saves = true }
+"0x825631B8" = { share_registers = true, keep_saves = true }
+"0x825684B0" = { share_registers = true, keep_saves = true }
+"0x82587298" = { share_registers = true, keep_saves = true }
+"0x825872A8" = { share_registers = true, keep_saves = true }
+"0x825872E0" = { share_registers = true, keep_saves = true }
+"0x82587BC0" = { share_registers = true, keep_saves = true }
+"0x82587FA0" = { share_registers = true, keep_saves = true }
+"0x82595320" = { share_registers = true, keep_saves = true }
+"0x8259E1D0" = { share_registers = true, keep_saves = true }
+"0x8259E970" = { share_registers = true, keep_saves = true }
+"0x825C1EC8" = { share_registers = true, keep_saves = true }
+"0x825C5B78" = { share_registers = true, keep_saves = true }
+"0x82637FA0" = { share_registers = true, keep_saves = true }
+"0x82638038" = { share_registers = true, keep_saves = true }
+"0x82639728" = { share_registers = true, keep_saves = true }
+"0x82639770" = { share_registers = true, keep_saves = true }
+"0x828ED9D8" = { share_registers = true, keep_saves = true }
+"0x828F4398" = { share_registers = true, keep_saves = true }
+"0x828F4480" = { share_registers = true, keep_saves = true }
+"0x8291E190" = { share_registers = true, keep_saves = true }
+"0x8291E260" = { share_registers = true, keep_saves = true }
+"0x8291E418" = { share_registers = true, keep_saves = true }
+"0x8291E7B8" = { share_registers = true, keep_saves = true }
+"0x8291EDF0" = { share_registers = true, keep_saves = true }
+"0x8291EED0" = { share_registers = true, keep_saves = true }
+"0x8291F678" = { share_registers = true, keep_saves = true }
+"0x82929510" = { share_registers = true, keep_saves = true }
+"0x829295D0" = { share_registers = true, keep_saves = true }
+"0x829481A8" = { share_registers = true, keep_saves = true }
+"0x829484F0" = { share_registers = true, keep_saves = true }
+
+[[switch_tables]]
+address = 0x826629EC
+register = 10
+labels = [
+    0x82662A74, 0x82662A80, 0x82662A8C, 0x82662A98, 0x82662AA4, 0x82662AB0, 0x82662ABC, 0x82662AC8,
+    0x82662AD8, 0x826629F0, 0x826629F0, 0x826629F0, 0x82662AEC, 0x82662C0C, 0x82662A18, 0x82662AE4,
+    0x82662AEC, 0x82662D58, 0x82662C98, 0x82662C98, 0x82662C70, 0x826629F0, 0x826629F0, 0x826629F0,
+    0x82662AF4, 0x82662B28, 0x82662CD0, 0x82662B38, 0x826629F0, 0x826629F0, 0x826629F0, 0x826629F0,
+    0x82662AEC, 0x82662B94, 0x82662C84, 0x82662CFC, 0x82662BBC, 0x82662C0C, 0x82662CCC, 0x82662A54,
+    0x82662AF0, 0x826629FC, 0x82662ABC, 0x82662ABC, 0x82662AF0, 0x826629F0, 0x826629F0, 0x826629F0,
+    0x82662AEC, 0x82662BB8, 0x82662C8C, 0x82662BAC, 0x82662AE4, 0x82662B74, 0x82662B0C, 0x82662CA8,
+    0x82662AE4, 0x82662C68, 0x82662BFC, 0x82662C34, 0x826629F0, 0x826629F0, 0x826629F0, 0x826629F0,
+]
