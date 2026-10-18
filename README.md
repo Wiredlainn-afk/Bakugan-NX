@@ -16,6 +16,10 @@ up to 1080p docked, with a dynamic render scale that gives up resolution only wh
 > You need your own copy of the Xbox 360 game: the extracted disc (the folder with `default.xex` and `media/`).
 > No game files, no code generated from them and no binaries are in this repository, and none are distributed.
 
+> [!TIP]
+> **Installer page: https://wiredlainn-afk.github.io/Bakugan-NX/** — pick your disc, get the SD card package. Everything
+> runs in your browser. See [How to install](#how-to-install).
+
 ## Status
 
 Boots and plays on a Switch in handheld mode and docked, with sound, controllers, saves, the intro movies and the
