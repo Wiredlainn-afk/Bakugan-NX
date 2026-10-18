@@ -1,0 +1,19 @@
+name: Redeploy the installer page
+
+# When a release is published, run the installer workflow on main so the page serves the new build.
+on:
+  release:
+    types: [published]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start the installer workflow on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run installer.yml --repo "$GITHUB_REPOSITORY" --ref main

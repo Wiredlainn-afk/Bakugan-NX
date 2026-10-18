@@ -15,8 +15,8 @@ on:
       - 'shaders/XenosRecomp/**'
       - 'app/src/me/native/bakugan_shader_library.cpp'
       - '.github/workflows/installer.yml'
-  release:
-    types: [published]     # a new release: redeploy so the page serves the new NRO
+  # A new release redeploys the page through .github/workflows/release-redeploy.yml (a run started by a release tag is not
+  # allowed to deploy to the github-pages environment, which only accepts main).
   workflow_dispatch:
     inputs:
       release_tag:
