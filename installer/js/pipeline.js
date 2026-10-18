@@ -9,7 +9,7 @@
 //
 // Based on the installer of masseffect-nx (NebadasSwifty), without its NSP, DLC and Unreal-package parts.
 import { ZipWriter } from './zip.js';
-import { planGameFiles, shaderFiles, sha256Hex } from './plan.js';
+import { planGameFiles, shaderFiles, sha256Hex, languageSkips } from './plan.js';
 import { scanContainers } from './par_scan.js';
 
 export class Cancelled extends Error {
@@ -348,7 +348,7 @@ async function* packageChunks(packRemote, file, size, chunkBytes, signal) {
 /**
  * Runs the whole thing.
  * options: { config, edition, files (disc files, re-rooted), mode: 'full'|'update', sink, createWorker(kind),
- *            baseUrl, fetchImpl, signal, onProgress(stageId, {done,total,label}), onLog(text, level) }
+ *            languages (Set of language ids to include; default all), baseUrl, fetchImpl, signal, onProgress(stageId, {done,total,label}), onLog(text, level) }
  * Returns { zipBytes, shaders: {ok, failures (always empty: a failure throws), known, ignored, total}, sinkResult, tag }.
  */
 export async function run(options) {
@@ -414,7 +414,9 @@ export async function run(options) {
 
     // ---- the zip ----
     throwIfCancelled(signal);
-    const plan = mode === 'full' ? planGameFiles(files, config.disc) : null;
+    const extraSkips = options.languages ? languageSkips(config.languages, options.languages) : [];
+    if (extraSkips.length) log(`Languages left out: ${config.languages.list.filter((l) => !options.languages.has(l.id)).map((l) => l.name).join(', ')}.`, 'info');
+    const plan = mode === 'full' ? planGameFiles(files, config.disc, extraSkips) : null;
     const entries = [
       { name: `${root}/${names.nro}`, size: build.nro.length, chunks: () => bytesOnce(build.nro) },
       ...(build.pipelineCache ? [{ name: `${root}/${names.pipelineCache}`, size: build.pipelineCache.length, chunks: () => bytesOnce(build.pipelineCache) }] : []),

@@ -69,6 +69,23 @@ export const CONFIG = {
     shaderExtension: '.par',
   },
 
+  // The voice and intro-movie languages of the game (media/sound/<name>/ and media/movie/intro_4_3_<code>.pam). The player
+  // can leave some out of the zip: the NRO (vfs_interchangeable in app/bakugan_switch_defaults.toml) then serves the same
+  // file of an installed language, so the game still runs. The text of the game lives in d00.arc and is not affected.
+  // `minBuild`: the oldest build whose NRO knows that fallback; with an older release the page offers no choice.
+  languages: {
+    minBuild: '0.1.1',
+    list: [
+      { id: 'english', name: 'English', soundDir: 'media/sound/english/', introMovie: 'media/movie/intro_4_3_eng.pam' },
+      { id: 'french', name: 'French', soundDir: 'media/sound/french/', introMovie: 'media/movie/intro_4_3_fre.pam' },
+      { id: 'german', name: 'German', soundDir: 'media/sound/german/', introMovie: 'media/movie/intro_4_3_ger.pam' },
+      { id: 'italian', name: 'Italian', soundDir: 'media/sound/italian/', introMovie: 'media/movie/intro_4_3_ita.pam' },
+      { id: 'spanish', name: 'Spanish', soundDir: 'media/sound/spanish/', introMovie: 'media/movie/intro_4_3_spa.pam' },
+      { id: 'dutch', name: 'Dutch', soundDir: 'media/sound/dutch/', introMovie: 'media/movie/intro_4_3_dut.pam' },
+      { id: 'swedish', name: 'Swedish', soundDir: 'media/sound/swedish/', introMovie: 'media/movie/intro_4_3_swe.pam' },
+    ],
+  },
+
   // The WebAssembly tools (built by shaders/wasm/*.sh and published by the workflow into installer/wasm/).
   wasm: {
     dir: 'wasm/',

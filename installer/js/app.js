@@ -4,7 +4,7 @@ import { CONFIG } from '../config.js';
 import { run, stageIds, Cancelled, UserError } from './pipeline.js';
 import { sourceFromIso, sourceFromFileList, sourceFromDataTransfer, inspectDisc } from './source.js';
 import { openSink, describeSinkSupport, cleanStaleTemporaryFiles } from './sink.js';
-import { planGameFiles, formatBytes, formatDuration } from './plan.js';
+import { planGameFiles, formatBytes, formatDuration, languageSkips, languageBytes, buildAtLeast } from './plan.js';
 
 const $ = (id) => document.getElementById(id);
 const show = (el, on) => { el.hidden = !on; };
@@ -19,6 +19,8 @@ const STAGE_LABELS = {
 
 let disc = null; // { files, edition, ... } of the picked game
 let running = null; // { controller }
+let selectedLanguages = new Set(CONFIG.languages.list.map((l) => l.id));
+let languagesAllowed = true; // false while the published build does not know the language fallback
 
 // ---- environment ----------------------------------------------------------------------------------------------
 function checkEnvironment() {
@@ -102,12 +104,64 @@ function showEdition(found) {
   p.textContent = `${found.edition.name}${found.matchType === 'exact' ? '' : ' (matched by its header, not by the exact file)'}`;
   body.append(p);
   setWizard(3, [1, 2]);
-  const plan = planGameFiles(found.files, CONFIG.disc);
+  selectedLanguages = new Set(CONFIG.languages.list.map((l) => l.id));
+  showLanguages(found);
+  updateCreateInfo();
+  show($('step-create'), true);
+}
+
+function updateCreateInfo() {
+  if (!disc?.edition) return;
+  const plan = planGameFiles(disc.files, CONFIG.disc, languageSkips(CONFIG.languages, selectedLanguages));
   $('create-info').textContent =
     `Full zip: about ${formatBytes(plan.copyBytes + CONFIG.limits.expectedShaderBytes + CONFIG.limits.expectedNroBytes)} ` +
     `(${plan.copy.length.toLocaleString('en-US')} game files, the shader library and the build). ` +
     `Update zip: about ${formatBytes(CONFIG.limits.expectedShaderBytes + CONFIG.limits.expectedNroBytes)}.`;
-  show($('step-create'), true);
+}
+
+// ---- step 3: languages -------------------------------------------------------------------------------------------
+async function checkLanguageSupport() {
+  // The language choice needs an NRO that serves a missing language's files from an installed one (CONFIG.languages.minBuild).
+  try {
+    const r = await fetch(new URL(CONFIG.build.manifest, location.href), { cache: 'no-cache' });
+    if (r.ok) languagesAllowed = buildAtLeast((await r.json()).tag, CONFIG.languages.minBuild);
+  } catch { /* keep the default */ }
+}
+
+function showLanguages(found) {
+  const box = $('lang-list');
+  box.replaceChildren();
+  const present = CONFIG.languages.list.filter((l) => languageBytes(found.files, l) > 0);
+  if (!present.length) { show($('step-languages'), false); return; }
+  const status = $('lang-status');
+  if (!languagesAllowed) {
+    status.className = 'status';
+    status.textContent = `The published build is older than ${CONFIG.languages.minBuild}, so every language is included. The choice appears with the next release.`;
+  } else {
+    status.textContent = '';
+  }
+  for (const l of present) {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = true;
+    input.disabled = !languagesAllowed;
+    input.dataset.lang = l.id;
+    input.addEventListener('change', () => {
+      if (input.checked) selectedLanguages.add(l.id); else selectedLanguages.delete(l.id);
+      if (selectedLanguages.size === 0) { selectedLanguages.add(l.id); input.checked = true; status.className = 'status error'; status.textContent = 'At least one language must stay selected.'; }
+      else status.textContent = '';
+      updateCreateInfo();
+    });
+    const name = document.createElement('span');
+    name.textContent = l.name;
+    const size = document.createElement('span');
+    size.className = 'size';
+    size.textContent = formatBytes(languageBytes(found.files, l));
+    label.append(input, name, size);
+    box.append(label);
+  }
+  show($('step-languages'), true);
 }
 
 function wireSource() {
@@ -175,7 +229,7 @@ function showResult(kind, html) {
 async function create(mode) {
   if (!disc?.edition || running) return;
   const name = mode === 'full' ? CONFIG.zip.fullName : CONFIG.zip.updateName;
-  const plan = planGameFiles(disc.files, CONFIG.disc);
+  const plan = planGameFiles(disc.files, CONFIG.disc, languageSkips(CONFIG.languages, selectedLanguages));
   const expected = CONFIG.limits.expectedShaderBytes + CONFIG.limits.expectedNroBytes + (mode === 'full' ? plan.copyBytes : 0);
   const sink = await openSink(name, expected); // needs the click's user gesture
   if (!sink) return;
@@ -190,7 +244,7 @@ async function create(mode) {
   const timer = setInterval(() => { $('elapsed').textContent = `Elapsed ${formatDuration((Date.now() - started) / 1000)}`; }, 1000);
   try {
     const result = await run({
-      config: CONFIG, edition: disc.edition, files: disc.files, mode, sink, createWorker,
+      config: CONFIG, edition: disc.edition, files: disc.files, mode, sink, createWorker, languages: selectedLanguages,
       baseUrl: location.href, signal: controller.signal,
       onProgress: setStage, onLog: log,
     });
@@ -221,5 +275,6 @@ $('repo-link').href = CONFIG.project.repoUrl;
 $('author').textContent = CONFIG.project.author;
 cleanStaleTemporaryFiles();
 checkEnvironment();
+checkLanguageSupport();
 wireSource();
 wireCreate();

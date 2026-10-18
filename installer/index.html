@@ -29,7 +29,8 @@
     <ol class="wizard-steps" id="wizard">
       <li class="wstep active" data-step="1"><span class="wlabel">Your game</span><span class="sr-only wstate"></span></li>
       <li class="wstep pending" data-step="2"><span class="wlabel">Check</span><span class="sr-only wstate"></span></li>
-      <li class="wstep pending" data-step="3"><span class="wlabel">Build package</span><span class="sr-only wstate"></span></li>
+      <li class="wstep pending" data-step="3"><span class="wlabel">Languages</span><span class="sr-only wstate"></span></li>
+      <li class="wstep pending" data-step="4"><span class="wlabel">Build package</span><span class="sr-only wstate"></span></li>
     </ol>
   </nav>
   <p class="lead">
@@ -59,8 +60,19 @@
     <div id="edition-body"></div>
   </section>
 
+  <section class="card" id="step-languages" hidden>
+    <h2><span class="num">3</span> Languages to include (optional)</h2>
+    <p class="hint">
+      The game has voices and an intro movie in seven languages (each about 80 MB). Untick the ones you don't need to make the
+      package smaller. If the game asks for a language you left out, it plays another installed language instead; the
+      menus and text follow the language you choose in the game and are not affected. At least one must stay ticked.
+    </p>
+    <div id="lang-list" class="lang-list"></div>
+    <p class="status" id="lang-status" role="status"></p>
+  </section>
+
   <section class="card" id="step-create" hidden>
-    <h2><span class="num">3</span> Create the package</h2>
+    <h2><span class="num">4</span> Create the package</h2>
     <div id="create-info" class="info"></div>
     <div class="actions" id="actions">
       <button class="btn primary" id="create-full" type="button">Create bakugan-nx.zip</button>

@@ -16,6 +16,16 @@ known edition (`config.js`), and creates:
 * `bakugan-nx-update.zip`: the same without `game_root/`, to extract over an existing install (the disc is still needed,
   because the shaders are made from it).
 
+## Languages
+
+The game has voices (`media/sound/<language>/`) and an intro movie (`media/movie/intro_4_3_<code>.pam`) in seven languages,
+about 80 MB each. The page has a "Languages to include" step (all ticked by default): the unticked ones are left out of
+the zip (keeping only English saves about 480 MB of the 3.3 GB). The NRO (build 0.1.1 or newer) has a file-system fallback
+(`vfs_interchangeable`, `app/bakugan_switch_defaults.toml`, `sdk/src/filesystem/virtual_file_system.cpp`): when the game
+asks for a file of a language that is not on the card, the same file of the first installed language is served instead.
+The menus and text come from `d00.arc` and are not affected. With a published build older than `config.languages.minBuild`
+the page shows no choice and includes every language.
+
 ## How it works
 
 ```

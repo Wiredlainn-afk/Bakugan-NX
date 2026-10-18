@@ -30,13 +30,53 @@ export function findDiscRoot(files, xexName) {
   return { files: out, prefix };
 }
 
+/**
+ * The files of the languages that are not selected: [{ prefix, why }] for planGameFiles' `extraSkips`.
+ * `selected`: Set of language ids; nothing is skipped when every language is selected.
+ */
+export function languageSkips(languages, selected) {
+  const out = [];
+  for (const l of languages.list) {
+    if (selected.has(l.id)) continue;
+    out.push({ prefix: l.soundDir, why: `${l.name} voices (not selected)` });
+    out.push({ prefix: l.introMovie, why: `${l.name} intro movie (not selected)` });
+  }
+  return out;
+}
+
+/** The bytes of one language's loose files on the disc. */
+export function languageBytes(files, language) {
+  const sound = language.soundDir.toLowerCase();
+  const movie = language.introMovie.toLowerCase();
+  let total = 0;
+  for (const f of files) {
+    const p = f.path.toLowerCase();
+    if (p.startsWith(sound) || p === movie) total += f.size;
+  }
+  return total;
+}
+
+/** True when `tag` (like "0.1.1" or "v0.1.1") is at least `min`. Unknown tags count as old. */
+export function buildAtLeast(tag, min) {
+  const parse = (t) => String(t ?? '').replace(/^v/i, '').split('.').map((n) => parseInt(n, 10));
+  const a = parse(tag);
+  const b = parse(min);
+  if (a.some(Number.isNaN) || a.length < 2) return false;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const x = a[i] ?? 0, y = b[i] ?? 0;
+    if (x !== y) return x > y;
+  }
+  return true;
+}
+
 /** Splits the disc files into those copied to game_root and those left out (with the reason). */
-export function planGameFiles(files, disc) {
+export function planGameFiles(files, disc, extraSkips = []) {
   const copy = [];
   const skipped = [];
+  const rules = [...disc.skip, ...extraSkips];
   for (const f of files) {
     const lower = f.path.toLowerCase();
-    const rule = disc.skip.find((s) => lower.startsWith(s.prefix.toLowerCase()));
+    const rule = rules.find((s) => lower.startsWith(s.prefix.toLowerCase()));
     if (rule) skipped.push({ file: f, why: rule.why });
     else copy.push(f);
   }

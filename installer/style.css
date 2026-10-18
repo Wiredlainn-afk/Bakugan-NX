@@ -265,3 +265,7 @@ footer { max-width: 900px; margin: 0 auto; padding: 18px 16px 40px; color: var(-
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
   .bar.indeterminate > i { width: 100% !important; transform: none; opacity: .4; }
 }
+
+.lang-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .5rem 1rem; margin: .8rem 0; }
+.lang-list label { display: flex; gap: .5rem; align-items: baseline; cursor: pointer; }
+.lang-list .size { color: var(--muted); font-size: .9em; margin-left: auto; }

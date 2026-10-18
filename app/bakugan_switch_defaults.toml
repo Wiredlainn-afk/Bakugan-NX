@@ -37,6 +37,12 @@ present_cas_additional_sharpness = 0.7
 log_single_file = true
 log_max_files = 1
 
+# Languages the player did not install (the installer page lets them leave out voice and intro-movie languages): the game
+# asks for a file of a language that is not on the card, and the same file of the first installed language of the group is
+# used instead (the text of the game stays in the language chosen in the game's menu). With every language installed
+# nothing changes. Order = which language is tried first.
+vfs_interchangeable = "media/sound/english,media/sound/french,media/sound/german,media/sound/italian,media/sound/spanish,media/sound/dutch,media/sound/swedish;media/movie/intro_4_3_eng.pam,media/movie/intro_4_3_fre.pam,media/movie/intro_4_3_ger.pam,media/movie/intro_4_3_ita.pam,media/movie/intro_4_3_spa.pam,media/movie/intro_4_3_dut.pam,media/movie/intro_4_3_swe.pam"
+
 # The game's loose files are read directly. The SDK's asset pack (a 3.2 GB cache built from game_root at the first start,
 # minutes of black screen on the Switch: the first hang of the port) is off, and so is building it.
 asset_pack = false

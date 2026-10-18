@@ -15,12 +15,69 @@
 
 #include <rex/filesystem/devices/host_path_entry.h>
 
+#include <algorithm>
+#include <atomic>
+#include <cctype>
+#include <mutex>
+#include <set>
+#include <vector>
+
 REXCVAR_DEFINE_BOOL(allow_game_relative_writes, false, "Filesystem",
                     "Not useful to non-developers. Allows code to write to paths "
                     "relative to game://. Used for "
                     "generating test data to compare with original hardware.");
 
+REXCVAR_DEFINE_STRING(vfs_interchangeable, "", "Filesystem",
+                      "Groups of interchangeable game paths, so a game can run with some of its files left out (for "
+                      "example voices of languages the player did not install). Format: groups separated by ';', members "
+                      "of a group separated by ',', each member a path relative to the device root with '/' or '\\' "
+                      "(a folder or a file). When a file under one member does not exist, the same relative path under "
+                      "the next member that has it is used instead. Example: "
+                      "media/sound/english,media/sound/french;media/movie/intro_eng.pam,media/movie/intro_fre.pam");
+
 namespace rex::filesystem {
+
+namespace {
+/** Lower-case path with '\\' separators and no trailing separator, for prefix tests. */
+std::string InterchangeableKey(std::string_view path) {
+  std::string out(path);
+  for (char& c : out) c = c == '/' ? '\\' : char(std::tolower(static_cast<unsigned char>(c)));
+  while (!out.empty() && out.back() == '\\') out.pop_back();
+  while (!out.empty() && out.front() == '\\') out.erase(out.begin());
+  return out;
+}
+
+struct InterchangeableGroups {
+  std::vector<std::vector<std::string>> groups;  // members as written (original spelling), normalised in `keys`
+  std::vector<std::vector<std::string>> keys;
+};
+
+const InterchangeableGroups& Interchangeable() {
+  static const InterchangeableGroups parsed = [] {
+    InterchangeableGroups g;
+    const std::string text = REXCVAR_GET(vfs_interchangeable);
+    size_t pos = 0;
+    while (pos <= text.size()) {
+      size_t end = text.find(';', pos);
+      if (end == std::string::npos) end = text.size();
+      std::vector<std::string> members, keys;
+      size_t m = pos;
+      while (m <= end) {
+        size_t me = text.find(',', m);
+        if (me == std::string::npos || me > end) me = end;
+        std::string member = text.substr(m, me - m);
+        const std::string key = InterchangeableKey(member);
+        if (!key.empty()) { members.push_back(key); keys.push_back(key); }
+        m = me + 1;
+      }
+      if (members.size() >= 2) { g.groups.push_back(std::move(members)); g.keys.push_back(std::move(keys)); }
+      pos = end + 1;
+    }
+    return g;
+  }();
+  return parsed;
+}
+}  // namespace
 
 VirtualFileSystem::VirtualFileSystem() {}
 
@@ -132,6 +189,37 @@ Entry* VirtualFileSystem::ResolvePath(const std::string_view path) {
   const auto& device = *it;
   auto relative_path = normalized_path.substr(device->mount_path().size());
   auto* entry = device->ResolvePath(relative_path);
+
+  // A file the player left out (vfs_interchangeable): the same path under another member of its group.
+  if (!entry) {
+    const auto& groups = Interchangeable();
+    if (!groups.groups.empty()) {
+      const std::string key = InterchangeableKey(relative_path);
+      for (size_t gi = 0; gi < groups.groups.size() && !entry; ++gi) {
+        const auto& members = groups.groups[gi];
+        for (const auto& from : members) {
+          if (key.size() < from.size() || key.compare(0, from.size(), from) != 0) continue;
+          if (key.size() > from.size() && key[from.size()] != '\\') continue;
+          const std::string rest = key.substr(from.size());
+          for (const auto& to : members) {
+            if (to == from) continue;
+            auto* alt = device->ResolvePath(to + rest);
+            if (!alt) continue;
+            static std::mutex note_mutex;
+            static std::set<std::string> noted;
+            {
+              std::lock_guard<std::mutex> note_lock(note_mutex);
+              if (noted.insert(from + ">" + to).second)
+                REXFS_INFO("VFS: '{}' is not installed, using '{}' instead (vfs_interchangeable)", from, to);
+            }
+            entry = alt;
+            break;
+          }
+          if (entry) break;
+        }
+      }
+    }
+  }
 
   if (entry) {
     if (had_symlink) {

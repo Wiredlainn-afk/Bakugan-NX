@@ -195,7 +195,7 @@ if(REXGLUE_PLATFORM_SWITCH)
     rexglue_switch_add_nro(bakugan
         NAME "Bakugan Battle Brawlers"
         AUTHOR "Wiredlainn"
-        VERSION "0.1.0"
+        VERSION "0.1.1"
         ICON "${CMAKE_CURRENT_SOURCE_DIR}/icon.jpg")
 endif()
 
