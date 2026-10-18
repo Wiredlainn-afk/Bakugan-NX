@@ -106,7 +106,7 @@ Is the game itself slop? Also yes, let's be real, the franchise sucks and has be
 ## Credits
 
 This port exists thanks to the work of NebadasSwifty (masseffect-nx), ChanseyIsTheBest (sa2-nx), StevensND (nfsmw-nx and
-the SDK's Switch layer), madelrandel-blip (NFSMW Recompiled), Tom Clay and the Xenia authors (ReXGlue SDK), hedge-dev
+the SDK's Switch layer), Tom Clay and the Xenia authors (ReXGlue SDK), hedge-dev
 (XenosRecomp) and danfromtico (mesa-switch). Details and licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 The code of this repository is GPL-3.0 (`LICENSE`); the SDK and the shader tools keep their own licenses (see the notices).
