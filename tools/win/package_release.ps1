@@ -1,47 +1,40 @@
-# Makes the RELEASE files.
+# Makes the RELEASE files. Two outputs, both without the game's shaders (the web installer, installer/, makes the shader
+# package in the player's browser from their own disc):
 #
-# Default (the web installer, installer/): out\nx\release_assets\{bakugan.nro, bakugan_native_pipelines.bin} - the two files
-# to attach to the GitHub release. The installer page downloads them from the site that the workflow builds from that
-# release, and makes the shader package in the player's browser from their own disc, so no shaders are published.
+#   out\nx\sdcard_release\switch\bakugan-nx\    the SD card folder: bakugan.nro, cache\bakugan_native_pipelines.bin,
+#                                               game_root\PUT_YOUR_GAME_FILES_HERE.txt (the player's bakugan_shaders.mesp
+#                                               and .idx come from the installer page, or from -WithShaders below)
+#   out\nx\release_assets\                      the files to attach to the GitHub release, which the installer page serves:
+#                                               bakugan.nro, bakugan_native_pipelines.bin, SHA256SUMS.txt
+#
 # The pipeline cache is optional (the game runs without it, the first battles just compile pipelines); it comes from
-# release\cache\ and is left out when that folder has none. A SHA256SUMS.txt is written next to them.
+# release\cache\ and is left out when that folder has none.
 #
-# -Full makes the old self-contained SD card folder instead: out\nx\sdcard_release\switch\bakugan-nx\{bakugan.nro,
-# bakugan_shaders.mesp, bakugan_shaders.mesp.idx, cache\..., game_root\} (the shaders are the game's, translated: see
-# docs/building.md before publishing that one); -Zip also zips it as out\nx\bakugan-nx-<version>.zip.
+# -WithShaders also puts bakugan_shaders.mesp and .idx (out\shaderlib) into the SD card folder: the self-contained version
+# (the shaders are the game's, translated: see docs/building.md before publishing that one).
+# -Zip zips the SD card folder as out\nx\bakugan-nx-<version>.zip.
 #
-# No bakugan.toml in either: the NRO writes the player's default one on its first run and everything else comes from its
-# built-in defaults (one log file replaced at every start). Test builds go to out\nx\sdcard (package_switch.ps1 +
-# stage_toml.ps1).
+# No bakugan.toml: the NRO writes the player's default one on its first run and everything else comes from its built-in
+# defaults (one log file replaced at every start). Test builds go to out\nx\sdcard (package_switch.ps1 + stage_toml.ps1).
 #
-#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\package_release.ps1 [-Full [-Zip]] [-Version 0.1.0]
-param([switch]$Full, [switch]$Zip, [string]$Version = '0.1.0')
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\win\package_release.ps1 [-WithShaders] [-Zip] [-Version 0.1.0]
+param([switch]$WithShaders, [switch]$Zip, [string]$Version = '0.1.0')
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $nro = Join-Path $root 'out\nx\bakugan.nro'
 $cache = Join-Path $root 'release\cache\bakugan_native_pipelines.bin'
 if (-not (Test-Path $nro)) { throw "missing $nro (build the NRO first)" }
 
-if (-not $Full) {
-    $out = Join-Path $root 'out\nx\release_assets'
-    if (Test-Path $out) { Remove-Item -Recurse -Force $out }
-    New-Item -ItemType Directory -Force $out | Out-Null
-    Copy-Item -Force $nro $out
-    if (Test-Path $cache) { Copy-Item -Force $cache $out; 'pipeline cache included' }
-    else { 'no warmed pipeline cache (release\cache\bakugan_native_pipelines.bin): the release goes without it' }
-    $sums = Get-ChildItem $out -File | ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name }
-    $sums | Set-Content -Encoding ASCII (Join-Path $out 'SHA256SUMS.txt')
-    "release $Version assets in $out"
-    Get-ChildItem $out -File | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,2)}} | Format-Table -AutoSize
-    return
-}
-
+# ---- the SD card folder ----
 $out = Join-Path $root 'out\nx\sdcard_release\switch\bakugan-nx'
 if (Test-Path $out) { Remove-Item -Recurse -Force $out }
 New-Item -ItemType Directory -Force $out | Out-Null
-foreach ($f in 'out\nx\bakugan.nro', 'out\shaderlib\bakugan_shaders.mesp', 'out\shaderlib\bakugan_shaders.mesp.idx') {
-    $src = Join-Path $root $f
-    if (-not (Test-Path $src)) { throw "missing $src (build the NRO / the shader library first)" }
-    Copy-Item -Force $src $out
+Copy-Item -Force $nro $out
+if ($WithShaders) {
+    foreach ($f in 'out\shaderlib\bakugan_shaders.mesp', 'out\shaderlib\bakugan_shaders.mesp.idx') {
+        $src = Join-Path $root $f
+        if (-not (Test-Path $src)) { throw "missing $src (build the shader library first)" }
+        Copy-Item -Force $src $out
+    }
 }
 if (Test-Path $cache) {
     New-Item -ItemType Directory -Force (Join-Path $out 'cache') | Out-Null
@@ -58,13 +51,37 @@ $note = @(
     '    game_root\default.xex',
     '    game_root\media\...        (the whole media folder of the disc)',
     '',
-    'Delete this file if you like. The game''s files are not included in this download.'
+    'The game''s files are not included in this download.',
+    $(if ($WithShaders) { '' } else { 'The shader package (bakugan_shaders.mesp and .idx) is made from your disc by the installer page.' })
 )
 $note | Set-Content -Encoding ASCII (Join-Path $gr 'PUT_YOUR_GAME_FILES_HERE.txt')
 if ($Zip) {
     $zipPath = Join-Path $root "out\nx\bakugan-nx-$Version.zip"
     if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
-    Compress-Archive -Path (Join-Path $root 'out\nx\sdcard_release\switch') -DestinationPath $zipPath
+    # Entry names with forward slashes (Windows PowerShell's Compress-Archive writes backslashes, which other unzip tools
+    # keep as part of the file name).
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $base = Join-Path $root 'out\nx\sdcard_release'
+    $archive = [IO.Compression.ZipFile]::Open($zipPath, 'Create')
+    try {
+        Get-ChildItem (Join-Path $base 'switch') -Recurse -File | ForEach-Object {
+            $rel = $_.FullName.Substring($base.Length + 1) -replace '\\', '/'
+            [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $_.FullName, $rel, 'Optimal')
+        }
+    } finally { $archive.Dispose() }
     "zip: $zipPath"
 }
-Get-ChildItem $out -Recurse -File | Select-Object @{n='File';e={$_.FullName.Substring($out.Length + 1)}}, @{n='MB';e={[math]::Round($_.Length/1MB,1)}} | Format-Table -AutoSize
+
+# ---- the GitHub release assets (what the installer page downloads) ----
+$assets = Join-Path $root 'out\nx\release_assets'
+if (Test-Path $assets) { Remove-Item -Recurse -Force $assets }
+New-Item -ItemType Directory -Force $assets | Out-Null
+Copy-Item -Force $nro $assets
+if (Test-Path $cache) { Copy-Item -Force $cache $assets }
+Get-ChildItem $assets -File | ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } |
+    Set-Content -Encoding ASCII (Join-Path $assets 'SHA256SUMS.txt')
+
+"release ${Version}: SD card folder $out"
+Get-ChildItem $out -Recurse -File | Select-Object @{n='File';e={$_.FullName.Substring($out.Length + 1)}}, @{n='MB';e={[math]::Round($_.Length/1MB,2)}} | Format-Table -AutoSize
+"release assets $assets"
+Get-ChildItem $assets -File | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,2)}} | Format-Table -AutoSize
