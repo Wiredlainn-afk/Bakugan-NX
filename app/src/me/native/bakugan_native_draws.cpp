@@ -1205,7 +1205,11 @@ constexpr uint32_t kRegFetch = 0x4800;
 constexpr uint32_t kRegBooleans = 0x4900;
 constexpr uint32_t kRegistersConstants = 0x400;  // 256 constants x 4
 
-constexpr uint32_t kCapacityHeap[4] = {4096, 16, 64, 512};  // 2D, 3D, cube, samplers
+// 2D 4096 -> 16384: on the console (2026-10-18, 1 h 50 min of play) the 2D heap filled up 30 minutes in, with ~1,650 textures
+// in the cache ("C6: texture pool full (cause 35)"): from then on every new texture view got slot 0, the black placeholder
+// (the character-select panel, the G coins and the energy refill drawn black). The warning is logged once; the heap fill
+// level is in the "C3 descriptor heaps" line of the 10 s report now.
+constexpr uint32_t kCapacityHeap[4] = {16384, 16, 64, 512};  // 2D, 3D, cube, samplers
 // Work slots. The ones actually used are chosen by bakugan_native_slots_work; this is the room reserved
 // for them, and it has to match the array in bakugan_native_targets.cpp.
 constexpr size_t kSlotsOfWork = 3;
@@ -6476,6 +6480,17 @@ class DrawsVulkanImpl final : public DrawsVulkan {
   static constexpr uint32_t kDropPerFrame = 4;
 
   void EvictTexturesIfDoesMissing() {
+    // The 2D descriptor heap nearly full (a view slot per texture): free cold textures faster, whatever the memory limit
+    // says, so no new texture gets the black placeholder slot (console 2026-10-18: heap full after 30 min of play).
+    {
+      const auto& heap = heaps_[0];
+      const size_t used = heap.next - 1 - std::min<size_t>(heap.free.size(), heap.next - 1);
+      if (used * 100 >= size_t(heap.capacity) * 85) {
+        for (int i = 0; i < 4; ++i) {
+          DropSomeColdFew();
+        }
+      }
+    }
     const uint64_t limit = uint64_t(std::max(textures_mb_max_, 0)) << 20;
     if (!limit) {
       return;
@@ -7458,6 +7473,18 @@ class DrawsVulkanImpl final : public DrawsVulkan {
     }
     const uint64_t created = created_textures_ - created_previous_report_;
     created_previous_report_ = created_textures_;
+    {
+      static const char* const kHeapNames[4] = {"2D", "3D", "cube", "samplers"};
+      std::string heaps_text;
+      for (uint32_t h = 0; h < 4; ++h) {
+        const auto& m = heaps_[h];
+        const size_t used = m.next - 1 - std::min<size_t>(m.free.size(), m.next - 1);
+        heaps_text += fmt::format("{}{} {}/{}{}", h ? " | " : "", kHeapNames[h], used, m.capacity - 1,
+                                  m.refusals ? fmt::format(" ({} refused)", m.refusals) : std::string());
+      }
+      BAKUGAN_REPORT_RING("[native] C3 descriptor heaps (slots in use): {}; {} textures, {} views", heaps_text,
+                  textures_.size(), views_.size());
+    }
     if (created || bindings_thread_report_ || waits_bindings_report_) {
       static constexpr const char* kPhases[] = {"off", "LOOKING", "APPLYING"};
       BAKUGAN_REPORT_RING(
@@ -8913,7 +8940,17 @@ class DrawsVulkanImpl final : public DrawsVulkan {
       m.free.pop_back();
       return slot;
     }
-    return m.next < m.capacity ? m.next++ : 0;
+    if (m.next < m.capacity) {
+      return m.next++;
+    }
+    ++m.refusals;
+    if (frame_ >= heap_full_logged_frame_ + 600) {  // once every ~20 s at most, not once per session
+      heap_full_logged_frame_ = frame_;
+      REXLOG_ERROR("[native] C3: descriptor heap {} is full ({} slots, {} refusals so far; {} textures and {} views): "
+                   "new textures are drawn black until slots are freed",
+                   heap, m.capacity, m.refusals, textures_.size(), views_.size());
+    }
+    return 0;
   }
 
   // The draw's vertex input, recomputed only when the patched VS changes.
@@ -13208,7 +13245,9 @@ class DrawsVulkanImpl final : public DrawsVulkan {
     uint32_t capacity = 0;
     uint32_t next = 1;
     std::vector<uint32_t> free;
+    uint64_t refusals = 0;  // ReserveSlot with no slot left: the caller draws the black placeholder (slot 0)
   };
+  uint64_t heap_full_logged_frame_ = 0;
 
   const VulkanDevice* vulkan_device_;
   const VulkanDevice::Functions& dfn_;
