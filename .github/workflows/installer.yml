@@ -1,7 +1,8 @@
 name: Installer page
 
-# Builds the WebAssembly shader tools with Emscripten and deploys the installer page (installer/) together with them
-# and with the latest release's NRO to GitHub Pages.
+# Deploys the installer page (installer/) together with the latest release's build files to GitHub Pages.
+# Since 0.2.0 (Renut on deko3d) the shaders are inside the NRO, so the page needs no WebAssembly shader tools and nothing is built here.
+# The release must carry bakugan.nro, deko3d_shaders.bin and pipeline_list.bin (loose, or inside the SD card zip).
 #
 # One-time setup: Settings > Pages > Source: "GitHub Actions".
 #
@@ -10,10 +11,6 @@ on:
     branches: [main]
     paths:
       - 'installer/**'
-      - 'shaders/wasm/**'
-      - 'shaders/tools/**'
-      - 'shaders/XenosRecomp/**'
-      - 'app/src/me/native/bakugan_shader_library.cpp'
       - '.github/workflows/installer.yml'
   # A new release redeploys the page through .github/workflows/release-redeploy.yml (a run started by a release tag is not
   # allowed to deploy to the github-pages environment, which only accepts main).
@@ -23,10 +20,6 @@ on:
         description: 'Release to serve (empty selects the most recent published release, including prereleases)'
         required: false
         type: string
-      rebuild_dxc:
-        description: 'Rebuild DXC from C++ instead of using the verified reference WASM compiler (slow)'
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -35,98 +28,9 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
-env:
-  EMSDK_VERSION: '4.0.10'
-  XXHASH_REF: 'v0.8.2'
-  FMT_REF: '12.1.0'  # matches the SDK and the tested shader translator
-  DXC_COMMIT: '75a029d95e767f291885e081f71ed951acad0019'   # must match shaders/wasm/link_dxc_wasm.sh
-
 jobs:
-  tools:
-    name: Build hlsl / pack (WebAssembly)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: mymindstorm/setup-emsdk@v14
-        with:
-          version: ${{ env.EMSDK_VERSION }}
-          actions-cache-folder: emsdk-cache
-      - name: Fetch header-only dependencies
-        run: |
-          git clone --depth 1 --branch "$XXHASH_REF" https://github.com/Cyan4973/xxHash.git "$RUNNER_TEMP/xxHash"
-          git clone --depth 1 --branch "$FMT_REF" https://github.com/fmtlib/fmt.git "$RUNNER_TEMP/fmt"
-      - name: Build
-        run: |
-          export XXHASH_DIR="$RUNNER_TEMP/xxHash" FMT_DIR="$RUNNER_TEMP/fmt/include"
-          OUT="$PWD/wasm-out" bash shaders/wasm/build_wasm_tools.sh hlsl pack
-          ls -l wasm-out
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wasm-tools
-          path: wasm-out/
-          if-no-files-found: error
-
-  dxc:
-    name: Prepare verified DXC (WebAssembly)
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache the result
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: dxc-out
-          key: dxc-wasm-${{ inputs.rebuild_dxc || false }}-${{ env.DXC_COMMIT }}-${{ env.EMSDK_VERSION }}-${{ hashFiles('shaders/wasm/dxc_web.cpp', 'shaders/wasm/link_dxc_wasm.sh', 'installer/tools/fetch_dxc.sh') }}
-      - name: Fetch and verify the reference DXC compiler
-        if: inputs.rebuild_dxc != true && steps.cache.outputs.cache-hit != 'true'
-        run: bash installer/tools/fetch_dxc.sh dxc-out
-      - uses: mymindstorm/setup-emsdk@v14
-        if: inputs.rebuild_dxc == true && steps.cache.outputs.cache-hit != 'true'
-        with:
-          version: ${{ env.EMSDK_VERSION }}
-          actions-cache-folder: emsdk-cache
-      - name: Install build tools
-        if: inputs.rebuild_dxc == true && steps.cache.outputs.cache-hit != 'true'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build cmake python3
-      - name: Fetch DXC at the pinned commit (with submodules)
-        if: inputs.rebuild_dxc == true && steps.cache.outputs.cache-hit != 'true'
-        run: |
-          git clone https://github.com/microsoft/DirectXShaderCompiler.git "$RUNNER_TEMP/dxc"
-          git -C "$RUNNER_TEMP/dxc" checkout "$DXC_COMMIT"
-          git -C "$RUNNER_TEMP/dxc" submodule update --init --recursive --depth 1
-      - name: Native build of the table generators
-        if: inputs.rebuild_dxc == true && steps.cache.outputs.cache-hit != 'true'
-        run: |
-          cmake -G Ninja -S "$RUNNER_TEMP/dxc" -B "$RUNNER_TEMP/dxc-host" -C "$RUNNER_TEMP/dxc/cmake/caches/PredefinedParams.cmake" \
-            -DCMAKE_BUILD_TYPE=Release -DENABLE_SPIRV_CODEGEN=ON -DLLVM_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_TESTS=OFF \
-            -DHLSL_INCLUDE_TESTS=OFF -DSPIRV_BUILD_TESTS=OFF
-          ninja -C "$RUNNER_TEMP/dxc-host" llvm-tblgen clang-tblgen
-      - name: WebAssembly build of DXC
-        if: inputs.rebuild_dxc == true && steps.cache.outputs.cache-hit != 'true'
-        run: |
-          emcmake cmake -G Ninja -S "$RUNNER_TEMP/dxc" -B "$RUNNER_TEMP/dxc-wasm" -C "$RUNNER_TEMP/dxc/cmake/caches/PredefinedParams.cmake" \
-            -DCMAKE_BUILD_TYPE=Release -DENABLE_SPIRV_CODEGEN=ON -DLLVM_TARGETS_TO_BUILD=None \
-            -DLLVM_ENABLE_THREADS=OFF -DLLVM_ENABLE_EH=ON -DLLVM_ENABLE_RTTI=ON -DLLVM_INCLUDE_TESTS=OFF \
-            -DCLANG_INCLUDE_TESTS=OFF -DHLSL_INCLUDE_TESTS=OFF -DSPIRV_BUILD_TESTS=OFF \
-            -DLLVM_TABLEGEN="$RUNNER_TEMP/dxc-host/bin/llvm-tblgen" -DCLANG_TABLEGEN="$RUNNER_TEMP/dxc-host/bin/clang-tblgen" \
-            -DCMAKE_C_FLAGS=-Wno-error \
-            "-DCMAKE_CXX_FLAGS=-Wno-invalid-specialization -Wno-error -D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR -D_LIBCPP_ENABLE_CXX20_REMOVED_TYPE_TRAITS"
-          ninja -C "$RUNNER_TEMP/dxc-wasm" dxcompiler
-      - name: Link dxc_web
-        if: inputs.rebuild_dxc == true && steps.cache.outputs.cache-hit != 'true'
-        run: |
-          DXC_SRC="$RUNNER_TEMP/dxc" DXC_BUILD="$RUNNER_TEMP/dxc-wasm" OUT="$PWD/dxc-out" shaders/wasm/link_dxc_wasm.sh
-          ls -l dxc-out
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wasm-dxc
-          path: dxc-out/
-          if-no-files-found: error
-
   deploy:
     name: Deploy to GitHub Pages
-    needs: [tools, dxc]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -137,14 +41,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: wasm-tools
-          path: wasm-all
-      - uses: actions/download-artifact@v4
-        with:
-          name: wasm-dxc
-          path: wasm-all
       - name: Published release assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -156,26 +52,25 @@ jobs:
             tag=$(gh api "repos/$GITHUB_REPOSITORY/releases" --jq '[.[] | select(.draft == false)][0].tag_name // empty')
           fi
           test -n "$tag" || { echo '::error::Publish a release with bakugan.nro before deploying'; exit 1; }
-          gh release download "$tag" --pattern '*.nro' --pattern 'bakugan_native_pipelines.bin' --pattern '*.zip' --dir release-assets
-          # The release may carry the SD card zip instead of the loose files: take bakugan.nro and the cache from it.
+          gh release download "$tag" --pattern '*.nro' --pattern 'deko3d_shaders.bin' --pattern 'pipeline_list.bin' --pattern '*.zip' --dir release-assets
+          # The release may carry the SD card zip instead of the loose files: take the build files from it.
           python3 - <<'PY'
           import glob, os, zipfile
           d = 'release-assets'
+          wanted = ('bakugan.nro', 'deko3d_shaders.bin', 'pipeline_list.bin')
           for z in glob.glob(os.path.join(d, '*.zip')):
               with zipfile.ZipFile(z) as zf:
                   for name in zf.namelist():
                       base = os.path.basename(name)
-                      if base in ('bakugan.nro', 'bakugan_native_pipelines.bin') and not os.path.exists(os.path.join(d, base)):
+                      if base in wanted and not os.path.exists(os.path.join(d, base)):
                           with open(os.path.join(d, base), 'wb') as out:
                               out.write(zf.read(name))
                           print('took', base, 'from', os.path.basename(z))
               os.remove(z)
           PY
           echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
-      - name: Verify DXC can compile a shader
-        run: node installer/tools/wasm_smoke.mjs wasm-all
       - name: Stage a complete site
-        run: bash installer/tools/stage_site.sh _site --wasm wasm-all --releases release-assets --require-complete
+        run: bash installer/tools/stage_site.sh _site --releases release-assets --require-complete
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

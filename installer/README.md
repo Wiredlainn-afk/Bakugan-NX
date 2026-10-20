@@ -2,8 +2,14 @@
 
 A static web page (plain HTML, CSS and ES modules, no build step, no CDN) that builds the SD card package of the port
 from the player's own Bakugan: Battle Brawlers game. It is meant for GitHub Pages. **Everything runs in the browser: the
-game files are never uploaded.** The only downloads are the page itself and the build (`bakugan.nro` and, when the release
-has one, `bakugan_native_pipelines.bin`), from the same site.
+game files are never uploaded.** The only downloads are the page itself and the build (`bakugan.nro`, `deko3d_shaders.bin`
+and `pipeline_list.bin`), from the same site.
+
+**Since 0.2.0 (Renut on deko3d) the shaders are inside the NRO**, so the page makes no shader package: `config.js` has
+`shaderMode: 'embedded'`, the run has two stages (download, zip) and the WebAssembly tools are not needed or staged. The
+0.1.x flow (scan the disc, translate, pack `bakugan_shaders.mesp`) is still in the code under `shaderMode: 'disc'`, described
+below. The page shows a warning, from `config.obsoleteFiles`, to delete the files of 0.1.x (`bakugan_shaders.mesp`, its
+`.idx`, `cache/bakugan_native_pipelines.bin`, other caches and an old `bakugan.toml`) before extracting the new zip.
 
 It is based on the installer of [masseffect-nx](https://github.com/nebadasSwifty/masseffect-nx) by NebadasSwifty, without
 its NSP, DLC and Unreal-package parts, and uses the WebAssembly DXC build pinned by StevensND's nfsmw-nx installer.
@@ -11,10 +17,10 @@ its NSP, DLC and Unreal-package parts, and uses the WebAssembly DXC build pinned
 The player picks the **disc image (.iso)** or the **extracted disc folder**, the page checks `default.xex` against the
 known edition (`config.js`), and creates:
 
-* `bakugan-nx.zip` (full install): `bakugan-nx/{bakugan.nro, cache/..., bakugan_shaders.mesp, bakugan_shaders.mesp.idx,
-  game_root/...}`, to be extracted into `sdmc:/switch/`;
-* `bakugan-nx-update.zip`: the same without `game_root/`, to extract over an existing install (the disc is still needed,
-  because the shaders are made from it).
+* `bakugan-nx.zip` (full install): `bakugan-nx/{bakugan.nro, cache/deko3d_shaders.bin, cache/pipeline_list.bin,
+  game_root/...}`, to be extracted into `sdmc:/switch/` (in `disc` mode: `bakugan_shaders.mesp`, `.idx` and
+  `cache/bakugan_native_pipelines.bin` instead of the two cache files);
+* `bakugan-nx-update.zip`: the same without `game_root/`, to extract over an existing install.
 
 ## Languages
 
@@ -26,7 +32,7 @@ asks for a file of a language that is not on the card, the same file of the firs
 The menus and text come from `d00.arc` and are not affected. With a published build older than `config.languages.minBuild`
 the page shows no choice and includes every language.
 
-## How it works
+## How it works (`shaderMode: 'disc'`, 0.1.x; with `embedded` only steps 1 and 5 run)
 
 ```
  source (ISO or folder) --> file list [{path, size, lazy Blob}]        js/xdvdfs.js, js/source.js
@@ -48,10 +54,12 @@ package of about 88 MB plus a 2.9 MB index.
 
 ## Building the site
 
-The workflow `.github/workflows/installer.yml` builds `hlsl` and `pack` with Emscripten
-(`shaders/wasm/build_wasm_tools.sh`), fetches the pinned DXC (`installer/tools/fetch_dxc.sh`), takes `bakugan.nro` (and
-`bakugan_native_pipelines.bin`) from the latest published release, runs `tools/wasm_smoke.mjs` and deploys to GitHub
-Pages (Settings > Pages > Source: "GitHub Actions"). Locally:
+With `embedded` the workflow `.github/workflows/installer.yml` only takes `bakugan.nro`, `deko3d_shaders.bin` and
+`pipeline_list.bin` (loose, or from the SD card zip) from the latest published release and deploys to GitHub Pages
+(Settings > Pages > Source: "GitHub Actions"); `tools/stage_site.sh` writes `releases/manifest.json` with their sizes and
+SHA-256, and `--require-complete` refuses a release that lacks one. A release must therefore carry those three files.
+For the 0.1.x `disc` mode the old workflow also built `hlsl` and `pack` with Emscripten (`shaders/wasm/build_wasm_tools.sh`),
+fetched the pinned DXC (`installer/tools/fetch_dxc.sh`) and ran `tools/wasm_smoke.mjs` (see the git history). Locally:
 
 ```
 shaders/wasm/build_wasm_tools.sh                       # needs Emscripten; writes shaders/wasm/out

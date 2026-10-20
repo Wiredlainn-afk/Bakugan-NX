@@ -18,7 +18,21 @@ export const CONFIG = {
     gameRootDir: 'game_root',
   },
 
-  // File names inside <zip.root>/. The shader package names are fixed by the game (shaders/README.md).
+  // 'embedded' (0.2.0 and later, Renut on deko3d): the game's shaders are compiled into the NRO, so the page makes no shader
+  // package (no disc scan, no translation, no packing) and the WebAssembly tools are not needed. 'disc' (0.1.x, the native
+  // renderer): the page makes bakugan_shaders.mesp from the player's disc.
+  shaderMode: 'embedded',
+
+  // Files of older builds that the current one does not read and that the player should delete from the SD card (shown on the page).
+  obsoleteFiles: [
+    'bakugan_shaders.mesp',
+    'bakugan_shaders.mesp.idx',
+    'cache/bakugan_native_pipelines.bin',
+    'bakugan.toml (an old one can select the old renderer; the 0.2.0 defaults are compiled in)',
+    'every other file in cache/ (old pipeline and shader caches)',
+  ],
+
+  // File names inside <zip.root>/. The shader package names are fixed by the game (shaders/README.md); used in 'disc' mode.
   files: {
     nro: 'bakugan.nro',
     // The player's settings are written by the NRO at the first start when missing; the release has no toml.
@@ -39,6 +53,7 @@ export const CONFIG = {
   // Known game editions, recognised by the SHA-256 of default.xex. The NRO is the recompiled program of one exact
   // default.xex, so only editions listed here can be installed.
   //   nro / pipelineCache: the asset names in the release (and in siteDir).
+  //   cacheFiles (shaderMode 'embedded'): release assets that go into the zip: [{ asset, zipPath (relative to zip.root) }].
   editions: [
     {
       id: 'ntsc-u-41560857',
@@ -53,6 +68,10 @@ export const CONFIG = {
       },
       nro: 'bakugan.nro',
       pipelineCache: 'bakugan_native_pipelines.bin',
+      cacheFiles: [
+        { asset: 'deko3d_shaders.bin', zipPath: 'cache/deko3d_shaders.bin' },
+        { asset: 'pipeline_list.bin', zipPath: 'cache/pipeline_list.bin' },
+      ],
     },
   ],
 
@@ -127,6 +146,8 @@ export const CONFIG = {
     // Rough sizes for the up-front estimate (the shader package is about 85 MB).
     expectedShaderBytes: 90 * 1000 * 1000,
     expectedNroBytes: 60 * 1000 * 1000,
+    // shaderMode 'embedded': the NRO with the shaders inside, plus the two cache files.
+    expectedEmbeddedBytes: 70 * 1000 * 1000,
     // The runtime and the packer refuse a shader package above 1 GiB (kMaxFile in bakugan_shader_library.cpp).
     maxShaderPackageBytes: 1073741824,
     // Without a disk-backed save target the whole zip is built in memory: warn above this size.

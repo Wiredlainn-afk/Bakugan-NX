@@ -1,7 +1,7 @@
 // The installer page: wires the HTML to the pipeline (js/pipeline.js). English only; nothing here touches the game's
 // files except through the pipeline. Based on the page of the masseffect-nx installer.
 import { CONFIG } from '../config.js';
-import { run, stageIds, Cancelled, UserError } from './pipeline.js';
+import { run, stagesFor, Cancelled, UserError } from './pipeline.js';
 import { sourceFromIso, sourceFromFileList, sourceFromDataTransfer, inspectDisc } from './source.js';
 import { openSink, describeSinkSupport, cleanStaleTemporaryFiles } from './sink.js';
 import { planGameFiles, formatBytes, formatDuration, languageSkips, languageBytes, buildAtLeast } from './plan.js';
@@ -10,7 +10,7 @@ const $ = (id) => document.getElementById(id);
 const show = (el, on) => { el.hidden = !on; };
 
 const STAGE_LABELS = {
-  download: 'Download the build',
+  download: 'Download the build and its cache files',
   scan: 'Read the game\'s shader files',
   translate: 'Translate the shaders',
   pack: 'Pack the shader library',
@@ -110,13 +110,31 @@ function showEdition(found) {
   show($('step-create'), true);
 }
 
+// What the zip holds besides the game files.
+function buildBytes() {
+  return CONFIG.shaderMode === 'embedded'
+    ? CONFIG.limits.expectedEmbeddedBytes
+    : CONFIG.limits.expectedShaderBytes + CONFIG.limits.expectedNroBytes;
+}
+
+function showObsolete() {
+  const ul = $('obsolete-list');
+  ul.replaceChildren();
+  for (const f of CONFIG.obsoleteFiles ?? []) {
+    const li = document.createElement('li');
+    li.textContent = f;
+    ul.append(li);
+  }
+  show($('obsolete'), (CONFIG.obsoleteFiles ?? []).length > 0);
+}
+
 function updateCreateInfo() {
   if (!disc?.edition) return;
   const plan = planGameFiles(disc.files, CONFIG.disc, languageSkips(CONFIG.languages, selectedLanguages));
   $('create-info').textContent =
-    `Full zip: about ${formatBytes(plan.copyBytes + CONFIG.limits.expectedShaderBytes + CONFIG.limits.expectedNroBytes)} ` +
-    `(${plan.copy.length.toLocaleString('en-US')} game files, the shader library and the build). ` +
-    `Update zip: about ${formatBytes(CONFIG.limits.expectedShaderBytes + CONFIG.limits.expectedNroBytes)}.`;
+    `Full zip: about ${formatBytes(plan.copyBytes + buildBytes())} ` +
+    `(${plan.copy.length.toLocaleString('en-US')} game files and the build). ` +
+    `Update zip: about ${formatBytes(buildBytes())}.`;
 }
 
 // ---- step 3: languages -------------------------------------------------------------------------------------------
@@ -194,7 +212,7 @@ function createWorker(kind) {
 function buildStageList() {
   const ol = $('stages');
   ol.replaceChildren();
-  for (const id of stageIds) {
+  for (const id of stagesFor(CONFIG)) {
     const li = document.createElement('li');
     li.className = 'stage pending';
     li.dataset.stage = id;
@@ -230,7 +248,7 @@ async function create(mode) {
   if (!disc?.edition || running) return;
   const name = mode === 'full' ? CONFIG.zip.fullName : CONFIG.zip.updateName;
   const plan = planGameFiles(disc.files, CONFIG.disc, languageSkips(CONFIG.languages, selectedLanguages));
-  const expected = CONFIG.limits.expectedShaderBytes + CONFIG.limits.expectedNroBytes + (mode === 'full' ? plan.copyBytes : 0);
+  const expected = buildBytes() + (mode === 'full' ? plan.copyBytes : 0);
   const sink = await openSink(name, expected); // needs the click's user gesture
   if (!sink) return;
   const controller = new AbortController();
@@ -249,7 +267,8 @@ async function create(mode) {
       onProgress: setStage, onLog: log,
     });
     showResult('ok', `Done: <strong>${name}</strong> (${formatBytes(result.zipBytes)}). Extract it into <code>sdmc:/switch/</code> on the SD card.` +
-      (mode === 'full' ? '' : ' (This is an update: extract it over your existing <code>bakugan-nx</code> folder.)'));
+      (mode === 'full' ? '' : ' (This is an update: extract it over your existing <code>bakugan-nx</code> folder.)') +
+      (CONFIG.shaderMode === 'embedded' ? ' <strong>Before you extract it, delete the old shader and cache files from the SD card</strong> (see the list below).' : ''));
   } catch (e) {
     if (e instanceof Cancelled) showResult('warn', 'Cancelled.');
     else {
@@ -274,6 +293,7 @@ $('releases-link').href = CONFIG.project.releasesUrl;
 $('repo-link').href = CONFIG.project.repoUrl;
 $('author').textContent = CONFIG.project.author;
 cleanStaleTemporaryFiles();
+showObsolete();
 checkEnvironment();
 checkLanguageSupport();
 wireSource();

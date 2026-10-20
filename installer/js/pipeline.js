@@ -22,6 +22,11 @@ export class UserError extends Error {
 
 export const stageIds = ['download', 'scan', 'translate', 'pack', 'zip'];
 
+/** The stages a run goes through: the shader stages only exist when the page makes the shader package from the disc. */
+export function stagesFor(config) {
+  return config.shaderMode === 'embedded' ? ['download', 'zip'] : stageIds;
+}
+
 function abs(rel, baseUrl) {
   return new URL(rel, baseUrl).href;
 }
@@ -108,11 +113,23 @@ export async function fetchBuild(config, edition, { baseUrl, fetchImpl = fetch, 
     if (signal?.aborted) throw new Cancelled();
   }
   const files = [{ key: 'nro', label: edition.nro, url: abs(config.build.siteDir + edition.nro, baseUrl), manifestName: edition.nro }];
-  const cache = edition.pipelineCache;
-  if (cache && !(manifest && !manifest.assets?.[cache])) {
-    files.push({ key: 'pipelineCache', label: cache, url: abs(config.build.siteDir + cache, baseUrl), manifestName: cache, optional: true });
+  if (config.shaderMode === 'embedded') {
+    // Release files that go into the zip beside the NRO (the shader cache and the pipeline list). Left out when the
+    // release does not list them: the game builds them at the first start.
+    for (const cf of edition.cacheFiles ?? []) {
+      if (manifest && !manifest.assets?.[cf.asset]) {
+        log?.(`The release has no ${cf.asset}: the game builds it during play (stutter at the first start).`, 'warn');
+        continue;
+      }
+      files.push({ key: `cache:${cf.zipPath}`, label: cf.asset, url: abs(config.build.siteDir + cf.asset, baseUrl), manifestName: cf.asset, optional: true, zipPath: cf.zipPath });
+    }
   } else {
-    log?.('The release has no pipeline cache: the first battles compile pipelines during play.', 'warn');
+    const cache = edition.pipelineCache;
+    if (cache && !(manifest && !manifest.assets?.[cache])) {
+      files.push({ key: 'pipelineCache', label: cache, url: abs(config.build.siteDir + cache, baseUrl), manifestName: cache, optional: true });
+    } else {
+      log?.('The release has no pipeline cache: the first battles compile pipelines during play.', 'warn');
+    }
   }
   const out = {};
   let doneBytes = 0;
@@ -139,6 +156,7 @@ export async function fetchBuild(config, edition, { baseUrl, fetchImpl = fetch, 
       log?.('No manifest.json on the site: the build could not be verified against a checksum.', 'warn');
     }
     out[f.key] = data;
+    if (f.zipPath) (out.extra ??= []).push({ zipPath: f.zipPath, data });
     doneBytes += data.length;
   }
   out.tag = manifest?.tag ?? null;
@@ -363,11 +381,12 @@ export async function run(options) {
   const names = config.files;
   const root = config.zip.root;
   try {
-    if (names.shadersIndex !== `${names.shaders}.idx`) {
+    const embedded = config.shaderMode === 'embedded';
+    if (!embedded && names.shadersIndex !== `${names.shaders}.idx`) {
       throw new UserError('config.js: files.shadersIndex must be files.shaders + ".idx" (the packer derives the index name).', 'config');
     }
     throwIfCancelled(signal);
-    const missing = await checkToolchain(config, baseUrl, fetchImpl);
+    const missing = embedded ? [] : await checkToolchain(config, baseUrl, fetchImpl);
     if (missing.length) {
       throw new UserError(`The shader tools are not on this site: missing ${missing.join(', ')}. ` +
         'The site build did not include the WebAssembly tools (see installer/README.md); the shaders cannot be made in the browser until it does.', 'wasm-missing');
@@ -376,14 +395,18 @@ export async function run(options) {
     log(build.tag ? `Build ${build.tag} downloaded.` : 'Build downloaded.', 'info');
     if (build.pipelineCache) log(`Pipeline cache of the release: ${build.pipelineCache.length.toLocaleString('en-US')} bytes.`, 'info');
 
+    let shaders = { ok: 0, failures: [], known: [], ignored: 0, total: 0 };
+    let packed = null;
+    let packRemote = null;
+    if (!embedded) {
     throwIfCancelled(signal);
     const containers = await scanStage({ files, config, signal, progress: stage('scan'), log });
     await addRuntimeContainers({ urls, containers, fetchImpl, signal, log });
 
     // The pack worker starts now so SPIR-V goes straight into it as the translators finish.
-    const packRemote = workers.spawn('pack');
+    packRemote = workers.spawn('pack');
     await packRemote.call({ type: 'init', urls }, [], 'ready');
-    const shaders = await translateStage({ workers, urls, containers, config, signal, progress: stage('translate'), log, packRemote });
+    shaders = await translateStage({ workers, urls, containers, config, signal, progress: stage('translate'), log, packRemote });
     containers.clear();
     if (shaders.ok === 0) throw new UserError('No shader could be translated. The WebAssembly tools may be broken; see the log.', 'shaders');
     if (shaders.failures.length) {
@@ -399,7 +422,7 @@ export async function run(options) {
 
     throwIfCancelled(signal);
     stage('pack')({ done: 0, total: 1, label: 'Packing the shader library (this takes a while and a lot of memory)' });
-    const packed = await packRemote.call({ type: 'pack', names: { package: names.shaders, index: names.shadersIndex } }, [], 'packed');
+    packed = await packRemote.call({ type: 'pack', names: { package: names.shaders, index: names.shadersIndex } }, [], 'packed');
     if (!packed.ok) {
       throw new UserError(packed.memory
         ? `Packing the shaders ran out of memory (${packed.error}). Close other tabs and programs and try again in a desktop browser with at least 8 GB of RAM.`
@@ -411,6 +434,7 @@ export async function run(options) {
     }
     stage('pack')({ done: 1, total: 1, label: `Shader library packed: ${packed.sizes.package.toLocaleString('en-US')} bytes + ${packed.sizes.index.toLocaleString('en-US')} index` });
     log(packed.summary || 'Packed.', 'info');
+    }
 
     // ---- the zip ----
     throwIfCancelled(signal);
@@ -420,8 +444,11 @@ export async function run(options) {
     const entries = [
       { name: `${root}/${names.nro}`, size: build.nro.length, chunks: () => bytesOnce(build.nro) },
       ...(build.pipelineCache ? [{ name: `${root}/${names.pipelineCache}`, size: build.pipelineCache.length, chunks: () => bytesOnce(build.pipelineCache) }] : []),
-      { name: `${root}/${names.shaders}`, size: packed.sizes.package, chunks: () => packageChunks(packRemote, names.shaders, packed.sizes.package, 8 * 1024 * 1024, signal) },
-      { name: `${root}/${names.shadersIndex}`, size: packed.sizes.index, chunks: () => packageChunks(packRemote, names.shadersIndex, packed.sizes.index, 8 * 1024 * 1024, signal) },
+      ...(build.extra ?? []).map((x) => ({ name: `${root}/${x.zipPath}`, size: x.data.length, chunks: () => bytesOnce(x.data) })),
+      ...(packed ? [
+        { name: `${root}/${names.shaders}`, size: packed.sizes.package, chunks: () => packageChunks(packRemote, names.shaders, packed.sizes.package, 8 * 1024 * 1024, signal) },
+        { name: `${root}/${names.shadersIndex}`, size: packed.sizes.index, chunks: () => packageChunks(packRemote, names.shadersIndex, packed.sizes.index, 8 * 1024 * 1024, signal) },
+      ] : []),
     ];
     if (plan) {
       for (const f of plan.copy) {

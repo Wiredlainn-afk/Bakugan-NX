@@ -34,10 +34,19 @@
     </ol>
   </nav>
   <p class="lead">
-    Make the SD card package of the Bakugan: Battle Brawlers port from <strong>your own copy</strong> of the Xbox 360 game.
+    Make the SD card package (version 0.2.0) of the Bakugan: Battle Brawlers port from <strong>your own copy</strong> of the Xbox 360 game.
     Everything runs in this browser tab: <strong>your game files never leave your computer.</strong>
   </p>
   <div id="env-warning" class="notice warn" hidden></div>
+  <div id="obsolete" class="notice warn" hidden>
+    <strong>Upgrading from 0.1.x? Delete the old shader and cache files first.</strong>
+    Version 0.2.0 draws with a different renderer and does not read the old files; leftovers can make it start with a black screen or
+    stutter. On the SD card, in <code>sdmc:/switch/bakugan-nx/</code>, delete:
+    <ul id="obsolete-list"></ul>
+    Keep <code>game_root/</code>. A new <code>cache/deko3d_shaders.bin</code> and <code>cache/pipeline_list.bin</code> are in the zip.
+    The game adds new shader variants to <code>deko3d_shaders.bin</code> while you play (the first time in a place it can stutter for a moment),
+    so extracting the zip over a cache you have already played with replaces it: it is built again as you play.
+  </div>
 
   <section class="card" id="step-source">
     <h2><span class="num">1</span> Choose your game</h2>
@@ -80,7 +89,7 @@
     </div>
     <p class="hint">
       <strong>First install:</strong> the full zip, with the game files (about 3 GB). <strong>Update</strong> (a new release): only the
-      program and the shaders, to extract over the existing folder. It needs the same game selected, because the shaders are made from it.
+      program and its cache files, to extract over the existing folder (after deleting the old files listed above). Your game files are not touched.
     </p>
 
     <div id="progress" class="progress-panel" hidden>
@@ -102,22 +111,20 @@
     <h2>After it finishes</h2>
     <p>Extract the zip into <code>sdmc:/switch/</code> on the SD card. You get:</p>
 <pre class="tree">/switch/bakugan-nx/
-  bakugan.nro
-  bakugan_shaders.mesp          (the game's shaders, made from your disc)
-  bakugan_shaders.mesp.idx      (index of the shader file)
-  cache/                        (pipeline cache of the release, if published)
+  bakugan.nro                   (the game's shaders are inside)
+  cache/deko3d_shaders.bin      (compiled shader variants; the game adds the ones it has not seen)
+  cache/pipeline_list.bin       (pipelines to prepare at the start)
   game_root/                    (the files of your disc)</pre>
     <p>Launch it with a title override (hold <strong>R</strong> while starting an installed game) or a forwarder, with a
-      <strong>39-bit address space</strong>. Album applet mode does not provide enough memory. The settings file
-      <code>bakugan.toml</code> is written next to the NRO at the first start.</p>
+      <strong>39-bit address space</strong>. Album applet mode does not provide enough memory.
+      <code>bakugan.toml</code> is optional (the settings are compiled in).</p>
   </section>
 
   <section class="card plain" id="privacy">
     <h2>Privacy</h2>
     <p>
-      The page reads your disc with your browser's own file access, makes the shaders on your computer with WebAssembly and
-      writes the zip to your disk. The only network traffic is loading this page and downloading the build
-      (<code>bakugan.nro</code> and the pipeline cache) from this site. No game data is uploaded, and there is no tracking.
+      The page reads your disc with your browser's own file access and writes the zip to your disk. The only network traffic is
+      loading this page and downloading the build (<code>bakugan.nro</code> and the two cache files) from this site. No game data is uploaded, and there is no tracking.
       The game's files are not part of the port.
     </p>
   </section>
@@ -127,7 +134,8 @@
     <ul class="credits-list">
       <li><strong>Bakugan: Battle Brawlers</strong> belongs to its owners. This is an unofficial, non-commercial fan project.</li>
       <li><strong><a href="https://github.com/nebadasSwifty/masseffect-nx" target="_blank" rel="noopener">NebadasSwifty</a></strong> — masseffect-nx: the native renderer, the shader tools and this installer page this one is based on.</li>
-      <li><strong><a href="https://github.com/ChanseyIsTheBest/sa2-nx" target="_blank" rel="noopener">ChanseyIsTheBest</a></strong> — sa2-nx.</li>
+      <li><strong><a href="https://github.com/ChanseyIsTheBest/sa2-nx" target="_blank" rel="noopener">ChanseyIsTheBest</a></strong> — banjo-nx, sa2-nx and peggle2-nx: reNut on the Switch with deko3d, the deko3d back end and the shader chain this version is built on.</li>
+      <li><strong><a href="https://github.com/masterspike52/reNut" target="_blank" rel="noopener">masterspike52</a></strong> — reNut, the Direct3D-level renderer of the PC port.</li>
       <li><strong><a href="https://github.com/StevensND" target="_blank" rel="noopener">StevensND</a></strong> — nfsmw-nx, the Switch layer of the SDK and the NVK driver build; the pinned DXC WebAssembly build comes from its installer.</li>
       <li><strong><a href="https://github.com/rexglue/rexglue-sdk" target="_blank" rel="noopener">Tom Clay &amp; ReXGlue SDK</a></strong> — the recompilation SDK, with portions from Xenia.</li>
       <li><strong><a href="https://github.com/hedge-dev/XenosRecomp" target="_blank" rel="noopener">hedge-dev</a></strong> — XenosRecomp, the Xenos shader translator.</li>
