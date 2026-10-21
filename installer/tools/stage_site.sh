@@ -5,7 +5,7 @@
 #
 #   --wasm <dir>      the WebAssembly tools (hlsl, pack, dxc_web: .mjs + .wasm). Default: installer/wasm. Only used when
 #                     config.js has shaderMode 'disc' (0.1.x); with 'embedded' (0.2.0) the shaders are inside the NRO
-#   --releases <dir>  the release assets (bakugan.nro, deko3d_shaders.bin, pipeline_list.bin) to publish next to the page;
+#   --releases <dir>  the release assets (bakugan.nro, deko3d_shaders.bin, pipeline_list.bin, and bakugan.toml.example when there is one) to publish next to the page;
 #                     a manifest.json with their size and SHA-256 is written. Default: none (the page then reports
 #                     that no build is published).
 #
@@ -56,7 +56,7 @@ else
 fi
 
 if [ -n "$releases" ]; then
-  for asset in "$releases"/*.nro "$releases"/bakugan_native_pipelines.bin "$releases"/deko3d_shaders.bin "$releases"/pipeline_list.bin; do
+  for asset in "$releases"/*.nro "$releases"/bakugan_native_pipelines.bin "$releases"/deko3d_shaders.bin "$releases"/pipeline_list.bin "$releases"/bakugan.toml.example; do
     [ ! -f "$asset" ] || cp "$asset" "$out/releases/"
   done
 fi
@@ -78,7 +78,7 @@ assets = {}
 rel = os.path.join(out, "releases")
 for name in sorted(os.listdir(rel)):
     path = os.path.join(rel, name)
-    if name.endswith(".nro") or name in ("bakugan_native_pipelines.bin", "deko3d_shaders.bin", "pipeline_list.bin"):
+    if name.endswith(".nro") or name in ("bakugan_native_pipelines.bin", "deko3d_shaders.bin", "pipeline_list.bin", "bakugan.toml.example"):
         h = hashlib.sha256()
         with open(path, "rb") as f:
             for chunk in iter(lambda: f.read(1 << 20), b""):

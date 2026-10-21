@@ -28,7 +28,7 @@ export const CONFIG = {
     'bakugan_shaders.mesp',
     'bakugan_shaders.mesp.idx',
     'cache/bakugan_native_pipelines.bin',
-    'bakugan.toml (an old one can select the old renderer; the 0.2.0 defaults are compiled in)',
+    'bakugan.toml (an old one can select the old renderer; the defaults are compiled in. A bakugan.toml.example comes with the zip)',
     'every other file in cache/ (old pipeline and shader caches)',
   ],
 
@@ -71,6 +71,8 @@ export const CONFIG = {
       cacheFiles: [
         { asset: 'deko3d_shaders.bin', zipPath: 'cache/deko3d_shaders.bin' },
         { asset: 'pipeline_list.bin', zipPath: 'cache/pipeline_list.bin' },
+        // 0.2.1: the player options at their defaults, to rename to bakugan.toml (optional: older releases do not have it).
+        { asset: 'bakugan.toml.example', zipPath: 'bakugan.toml.example' },
       ],
     },
   ],

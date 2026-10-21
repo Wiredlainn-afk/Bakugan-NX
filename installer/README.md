@@ -2,8 +2,8 @@
 
 A static web page (plain HTML, CSS and ES modules, no build step, no CDN) that builds the SD card package of the port
 from the player's own Bakugan: Battle Brawlers game. It is meant for GitHub Pages. **Everything runs in the browser: the
-game files are never uploaded.** The only downloads are the page itself and the build (`bakugan.nro`, `deko3d_shaders.bin`
-and `pipeline_list.bin`), from the same site.
+game files are never uploaded.** The only downloads are the page itself and the build (`bakugan.nro`, `deko3d_shaders.bin`,
+`pipeline_list.bin` and, since 0.2.1, `bakugan.toml.example`), from the same site.
 
 **Since 0.2.0 (Renut on deko3d) the shaders are inside the NRO**, so the page makes no shader package: `config.js` has
 `shaderMode: 'embedded'`, the run has two stages (download, zip) and the WebAssembly tools are not needed or staged. The
@@ -55,7 +55,7 @@ package of about 88 MB plus a 2.9 MB index.
 ## Building the site
 
 With `embedded` the workflow `.github/workflows/installer.yml` only takes `bakugan.nro`, `deko3d_shaders.bin` and
-`pipeline_list.bin` (loose, or from the SD card zip) from the latest published release and deploys to GitHub Pages
+`pipeline_list.bin` and `bakugan.toml.example` (loose, or from the SD card zip) from the latest published release and deploys to GitHub Pages
 (Settings > Pages > Source: "GitHub Actions"); `tools/stage_site.sh` writes `releases/manifest.json` with their sizes and
 SHA-256, and `--require-complete` refuses a release that lacks one. A release must therefore carry those three files.
 For the 0.1.x `disc` mode the old workflow also built `hlsl` and `pack` with Emscripten (`shaders/wasm/build_wasm_tools.sh`),

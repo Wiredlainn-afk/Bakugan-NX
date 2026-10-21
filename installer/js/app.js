@@ -206,7 +206,7 @@ function wireSource() {
 
 // ---- step 3: run -----------------------------------------------------------------------------------------------
 function createWorker(kind) {
-  return new Worker(new URL(`./workers/${kind}.worker.js?v=2`, import.meta.url), { type: 'module' });
+  return new Worker(new URL(`./workers/${kind}.worker.js?v=3`, import.meta.url), { type: 'module' });
 }
 
 function buildStageList() {

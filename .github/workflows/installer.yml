@@ -2,7 +2,7 @@ name: Installer page
 
 # Deploys the installer page (installer/) together with the latest release's build files to GitHub Pages.
 # Since 0.2.0 (Renut on deko3d) the shaders are inside the NRO, so the page needs no WebAssembly shader tools and nothing is built here.
-# The release must carry bakugan.nro, deko3d_shaders.bin and pipeline_list.bin (loose, or inside the SD card zip).
+# The release must carry bakugan.nro, deko3d_shaders.bin and pipeline_list.bin (loose, or inside the SD card zip); bakugan.toml.example is optional (0.2.1+).
 #
 # One-time setup: Settings > Pages > Source: "GitHub Actions".
 #
@@ -52,12 +52,12 @@ jobs:
             tag=$(gh api "repos/$GITHUB_REPOSITORY/releases" --jq '[.[] | select(.draft == false)][0].tag_name // empty')
           fi
           test -n "$tag" || { echo '::error::Publish a release with bakugan.nro before deploying'; exit 1; }
-          gh release download "$tag" --pattern '*.nro' --pattern 'deko3d_shaders.bin' --pattern 'pipeline_list.bin' --pattern '*.zip' --dir release-assets
+          gh release download "$tag" --pattern '*.nro' --pattern 'deko3d_shaders.bin' --pattern 'pipeline_list.bin' --pattern 'bakugan.toml.example' --pattern '*.zip' --dir release-assets
           # The release may carry the SD card zip instead of the loose files: take the build files from it.
           python3 - <<'PY'
           import glob, os, zipfile
           d = 'release-assets'
-          wanted = ('bakugan.nro', 'deko3d_shaders.bin', 'pipeline_list.bin')
+          wanted = ('bakugan.nro', 'deko3d_shaders.bin', 'pipeline_list.bin', 'bakugan.toml.example')
           for z in glob.glob(os.path.join(d, '*.zip')):
               with zipfile.ZipFile(z) as zf:
                   for name in zf.namelist():

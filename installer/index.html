@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#04060c">
 <link rel="icon" href="assets/icon.jpg">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -34,16 +34,20 @@
     </ol>
   </nav>
   <p class="lead">
-    Make the SD card package (version 0.2.0) of the Bakugan: Battle Brawlers port from <strong>your own copy</strong> of the Xbox 360 game.
+    Make the SD card package (version 0.2.1) of the Bakugan: Battle Brawlers port from <strong>your own copy</strong> of the Xbox 360 game.
     Everything runs in this browser tab: <strong>your game files never leave your computer.</strong>
   </p>
   <div id="env-warning" class="notice warn" hidden></div>
   <div id="obsolete" class="notice warn" hidden>
     <strong>Upgrading from 0.1.x? Delete the old shader and cache files first.</strong>
-    Version 0.2.0 draws with a different renderer and does not read the old files; leftovers can make it start with a black screen or
+    Version 0.2 draws with a different renderer and does not read the old files; leftovers can make it start with a black screen or
     stutter. On the SD card, in <code>sdmc:/switch/bakugan-nx/</code>, delete:
     <ul id="obsolete-list"></ul>
     Keep <code>game_root/</code>. A new <code>cache/deko3d_shaders.bin</code> and <code>cache/pipeline_list.bin</code> are in the zip.
+    <strong>Already on 0.2.0?</strong> Just extract the new zip over your folder: it replaces <code>bakugan.nro</code> and the cache files
+    (the shader package changed a little, so a cache from 0.2.0 would only miss three shaders, which then compile once).
+    The zip also has <code>bakugan.toml.example</code>: the graphics options of 0.2.1 (depth of field, scene resolution, anti-aliasing) at their defaults;
+    rename it to <code>bakugan.toml</code> to change them.
     The game adds new shader variants to <code>deko3d_shaders.bin</code> while you play (the first time in a place it can stutter for a moment),
     so extracting the zip over a cache you have already played with replaces it: it is built again as you play.
   </div>
@@ -114,6 +118,7 @@
   bakugan.nro                   (the game's shaders are inside)
   cache/deko3d_shaders.bin      (compiled shader variants; the game adds the ones it has not seen)
   cache/pipeline_list.bin       (pipelines to prepare at the start)
+  bakugan.toml.example          (the options at their defaults: rename it to bakugan.toml to change them)
   game_root/                    (the files of your disc)</pre>
     <p>Launch it with a title override (hold <strong>R</strong> while starting an installed game) or a forwarder, with a
       <strong>39-bit address space</strong>. Album applet mode does not provide enough memory.
@@ -124,7 +129,7 @@
     <h2>Privacy</h2>
     <p>
       The page reads your disc with your browser's own file access and writes the zip to your disk. The only network traffic is
-      loading this page and downloading the build (<code>bakugan.nro</code> and the two cache files) from this site. No game data is uploaded, and there is no tracking.
+      loading this page and downloading the build (<code>bakugan.nro</code>, the two cache files and the example options file) from this site. No game data is uploaded, and there is no tracking.
       The game's files are not part of the port.
     </p>
   </section>
@@ -150,6 +155,6 @@
   <a href="#credits">Credits</a> · <a href="THIRD_PARTY_NOTICES.md">Third-party notices</a>
 </footer>
 
-<script type="module" src="js/app.js?v=2"></script>
+<script type="module" src="js/app.js?v=3"></script>
 </body>
 </html>

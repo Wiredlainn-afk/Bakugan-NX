@@ -118,7 +118,7 @@ export async function fetchBuild(config, edition, { baseUrl, fetchImpl = fetch, 
     // release does not list them: the game builds them at the first start.
     for (const cf of edition.cacheFiles ?? []) {
       if (manifest && !manifest.assets?.[cf.asset]) {
-        log?.(`The release has no ${cf.asset}: the game builds it during play (stutter at the first start).`, 'warn');
+        log?.(`The release has no ${cf.asset}: the zip is made without it.`, 'warn');
         continue;
       }
       files.push({ key: `cache:${cf.zipPath}`, label: cf.asset, url: abs(config.build.siteDir + cf.asset, baseUrl), manifestName: cf.asset, optional: true, zipPath: cf.zipPath });
