@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#04060c">
 <link rel="icon" href="assets/icon.jpg">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -34,7 +34,7 @@
     </ol>
   </nav>
   <p class="lead">
-    Make the SD card package (version 0.2.1) of the Bakugan: Battle Brawlers port from <strong>your own copy</strong> of the Xbox 360 game.
+    Make the SD card package (version 0.2.3) of the Bakugan: Battle Brawlers port from <strong>your own copy</strong> of the Xbox 360 game.
     Everything runs in this browser tab: <strong>your game files never leave your computer.</strong>
   </p>
   <div id="env-warning" class="notice warn" hidden></div>
@@ -44,9 +44,9 @@
     stutter. On the SD card, in <code>sdmc:/switch/bakugan-nx/</code>, delete:
     <ul id="obsolete-list"></ul>
     Keep <code>game_root/</code>. A new <code>cache/deko3d_shaders.bin</code> and <code>cache/pipeline_list.bin</code> are in the zip.
-    <strong>Already on 0.2.0?</strong> Just extract the new zip over your folder: it replaces <code>bakugan.nro</code> and the cache files
+    <strong>Already on 0.2.0, 0.2.1 or 0.2.2?</strong> Just extract the new zip over your folder: it replaces <code>bakugan.nro</code> and the cache files
     (the shader package changed a little, so a cache from 0.2.0 would only miss three shaders, which then compile once).
-    The zip also has <code>bakugan.toml.example</code>: the graphics options of 0.2.1 (depth of field, scene resolution, anti-aliasing) at their defaults;
+    The zip also has <code>bakugan.toml.example</code>: the graphics options of 0.2.3 (depth of field, scene resolution, anti-aliasing) at their defaults;
     rename it to <code>bakugan.toml</code> to change them.
     The game adds new shader variants to <code>deko3d_shaders.bin</code> while you play (the first time in a place it can stutter for a moment),
     so extracting the zip over a cache you have already played with replaces it: it is built again as you play.
@@ -155,6 +155,6 @@
   <a href="#credits">Credits</a> · <a href="THIRD_PARTY_NOTICES.md">Third-party notices</a>
 </footer>
 
-<script type="module" src="js/app.js?v=3"></script>
+<script type="module" src="js/app.js?v=4"></script>
 </body>
 </html>
